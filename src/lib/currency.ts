@@ -11,14 +11,14 @@
  */
 
 /** App-wide fallback when no account/deal currency is available. */
-export const DEFAULT_CURRENCY = "USD";
+export const DEFAULT_CURRENCY = "INR";
 
 export interface CurrencyOption {
-  /** ISO-4217 code, e.g. "USD". Stored verbatim in the DB. */
+  /** ISO-4217 code, e.g. "INR". Stored verbatim in the DB. */
   code: string;
-  /** Human label for the dropdown, e.g. "US Dollar". */
+  /** Human label for the dropdown, e.g. "Indian Rupee". */
   label: string;
-  /** Symbol for compact display, e.g. "$". */
+  /** Symbol for compact display, e.g. "₹". */
   symbol: string;
 }
 
@@ -28,10 +28,10 @@ export interface CurrencyOption {
  * list to offer more — nothing else needs to change.
  */
 export const CURRENCIES: CurrencyOption[] = [
+  { code: "INR", label: "Indian Rupee", symbol: "₹" },
   { code: "USD", label: "US Dollar", symbol: "$" },
   { code: "EUR", label: "Euro", symbol: "€" },
   { code: "GBP", label: "British Pound", symbol: "£" },
-  { code: "INR", label: "Indian Rupee", symbol: "₹" },
   { code: "AUD", label: "Australian Dollar", symbol: "A$" },
   { code: "CAD", label: "Canadian Dollar", symbol: "C$" },
   { code: "BRL", label: "Brazilian Real", symbol: "R$" },

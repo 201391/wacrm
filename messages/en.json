@@ -629,7 +629,7 @@
       "totalDeals": "Total Deals",
       "totalDealsTooltip": "Count of every deal in this pipeline that isn't marked as Lost. Won deals are still included.",
       "pipelineValue": "Pipeline Value",
-      "pipelineValueTooltip": "Sum of the dollar values of all deals in this pipeline, excluding deals marked as Lost.",
+      "pipelineValueTooltip": "Sum of the values of all deals in this pipeline, excluding deals marked as Lost.",
       "avgDealSize": "Avg Deal Size",
       "avgDealSizeTooltip": "Pipeline Value divided by Total Deals — the average value of a single non-lost deal.",
       "weightedValue": "Weighted Value",
