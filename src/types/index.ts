@@ -699,3 +699,60 @@ export interface QuickReply {
   created_at: string;
   updated_at: string;
 }
+
+// ============================================================
+// E-Commerce & Orders Engine (migration 044)
+// ============================================================
+
+export interface Product {
+  id: string;
+  account_id: string;
+  title: string;
+  slug: string;
+  price: number;
+  original_price?: number;
+  stock: number;
+  images: string[];
+  description?: string | null;
+  category?: string;
+  weight?: string;
+  rating?: number;
+  reviews?: number;
+  badge?: string;
+  badge_color?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderItem {
+  product_id: string;
+  title: string;
+  price: number;
+  quantity: number;
+  image_url?: string | null;
+}
+
+export type OrderStatus = 'DRAFT' | 'PENDING_WHATSAPP' | 'CONFIRMED' | 'CANCELLED';
+
+export interface Order {
+  id: string;
+  account_id: string;
+  short_code: string;
+  customer_id?: string | null;
+  conversation_id?: string | null;
+  phone_number?: string | null;
+  customer_name?: string | null;
+  items: OrderItem[];
+  total_amount: number;
+  status: OrderStatus;
+  shipping_address?: string | null;
+  payment_preference?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Hydrated joins for admin views
+  contact?: Contact | null;
+  conversation?: Conversation | null;
+}
+

@@ -22,6 +22,12 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
+import {
+  getOrder,
+  getPendingOrderByConversation,
+} from '@/lib/orders/store'
+import { processOrderConfirmationTurn } from '@/lib/orders/ai-agent'
+
 
 // The `after()` callback in POST runs within this route's max duration.
 // Inbound processing can fan out to per-media Meta verification calls, so
@@ -954,12 +960,51 @@ async function processMessage(
     }).catch((err) => console.error('[automations] dispatch failed:', err))
   }
 
+  // ============================================================
+  // E-Commerce Order Confirmation Agent Dispatch
+  // Detects incoming order references (e.g. #(ORD-[A-Z0-9]+))
+  // or active pending orders on this conversation.
+  // ============================================================
+  let orderHandled = false
+  if (!flowConsumed && !interactiveReplyId && inboundText.trim()) {
+    try {
+      const orderCodeMatch =
+        inboundText.match(/#(ORD-[A-Z0-9]+)/i) ||
+        inboundText.match(/\b(ORD-[0-9]{4,8})\b/i)
+
+      let targetOrder = null
+      if (orderCodeMatch) {
+        const rawCode = (orderCodeMatch[1] || orderCodeMatch[0]).replace('#', '').trim()
+        targetOrder = await getOrder(rawCode)
+      }
+
+      if (!targetOrder) {
+        targetOrder = await getPendingOrderByConversation(conversation.id)
+      }
+
+      if (targetOrder) {
+        await processOrderConfirmationTurn({
+          accountId,
+          conversationId: conversation.id,
+          contactId: contactRecord.id,
+          configOwnerUserId,
+          customerPhone: contactRecord.phone || identity.phone || '',
+          incomingText: inboundText,
+          order: targetOrder,
+        })
+        orderHandled = true
+      }
+    } catch (orderErr) {
+      console.error('[webhook] order confirmation agent failed:', orderErr)
+    }
+  }
+
   // AI auto-reply. Runs only for plain-text inbound the deterministic
   // flow runner did NOT consume (flows win over the LLM), and only when
-  // the account has enabled it. Awaited inside `after()` (same reason as
-  // the webhook dispatch below); `dispatchInboundToAiReply` owns its
-  // eligibility gates + try/catch and never throws.
-  if (!flowConsumed && !interactiveReplyId && inboundText.trim()) {
+  // the order agent did not handle it, and only when the account has enabled it.
+  // Awaited inside `after()` (same reason as the webhook dispatch below);
+  // `dispatchInboundToAiReply` owns its eligibility gates + try/catch and never throws.
+  if (!flowConsumed && !interactiveReplyId && !orderHandled && inboundText.trim()) {
     await dispatchInboundToAiReply({
       accountId,
       conversationId: conversation.id,
@@ -970,6 +1015,7 @@ async function processMessage(
       inboundMessageId: message.id,
     })
   }
+
 
   // message.received webhook (public API). Awaited — not fire-and-forget
   // — because we're inside the route's `after()` block, which only keeps
