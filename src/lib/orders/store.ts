@@ -304,8 +304,8 @@ export async function getSupportPhoneNumber(accountId?: string): Promise<string>
     console.warn('[orders/store] could not fetch whatsapp_config:', err)
   }
 
-  // Graceful fallback phone matching Jatrra Farmer Helpline (+91 98260-JATRA)
-  return '919826000000'
+  // Graceful fallback phone matching Jatrra Farmer Helpline (+91 8815356175)
+  return '918815356175'
 }
 
 /**

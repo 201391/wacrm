@@ -53,7 +53,7 @@ export function StoreFooter() {
               {t('footerAdvisory', 'Farmer Advisory')}
             </a>
             <a
-              href="https://wa.me/919826000000?text=Hello%20Jatrra%2C%20I%20need%20assistance"
+              href="https://wa.me/918815356175?text=Hello%20Jatrra%2C%20I%20need%20assistance"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#0b7b3e] font-semibold text-emerald-700 transition"

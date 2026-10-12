@@ -326,10 +326,10 @@ export function StoreHeader() {
             </p>
             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 font-medium text-emerald-900 flex items-center justify-between">
               <span>📞 {language === 'hi' ? 'व्हाट्सएप हेल्पलाइन:' : 'WhatsApp Helpline:'}</span>
-              <strong>+91 98260-JATRA</strong>
+              <strong>+91 88153 56175</strong>
             </div>
             <a
-              href={`https://wa.me/919826000000?text=${encodeURIComponent(
+              href={`https://wa.me/918815356175?text=${encodeURIComponent(
                 language === 'hi'
                   ? 'नमस्ते जात्रा, मुझे कृषि एवं पशु आहार उत्पादों की जानकारी चाहिए'
                   : 'Hello Jatrra, I need assistance with Agri Products'
