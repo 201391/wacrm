@@ -94,7 +94,7 @@ const BANNER_IMAGE_PRESETS = [
   },
 ]
 
-export default function StoreCatalogPage() {
+function StoreCatalogContent() {
   const { items, addItem, updateQuantity } = useCart()
   const { t, language, toggleLanguage, translateProduct } = useStoreLanguage()
   const searchParams = useSearchParams()
@@ -1150,5 +1150,20 @@ export default function StoreCatalogPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function StoreCatalogPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-12 text-slate-400 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0b7b3e]" />
+          <p className="text-sm font-medium">Loading store catalog...</p>
+        </div>
+      }
+    >
+      <StoreCatalogContent />
+    </React.Suspense>
   )
 }

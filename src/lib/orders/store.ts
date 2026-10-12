@@ -445,7 +445,7 @@ export async function createProduct(
   const now = new Date().toISOString()
   const id = input.id || `prod-${Date.now()}`
   const rawSlug = input.slug || input.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || `prod-${Date.now()}`
-  
+
   const product: Product = {
     id,
     account_id: targetAccountId,
