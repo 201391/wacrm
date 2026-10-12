@@ -5,9 +5,10 @@ const next = require('next')
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
-const port = parseInt(process.env.PORT || '3000', 10)
+const rawPort = process.env.PORT
+const port = rawPort ? (isNaN(Number(rawPort)) ? rawPort : parseInt(rawPort, 10)) : 3000
 
-const app = next({ dev, hostname, port })
+const app = next({ dev, hostname, port: typeof port === 'number' ? port : 3000 })
 const handle = app.getRequestHandler()
 
 app
@@ -23,7 +24,7 @@ app
         res.end('Internal Server Error')
       }
     }).listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`)
+      console.log(`> Ready on ${typeof port === 'string' ? port : `http://${hostname}:${port}`}`)
     })
   })
   .catch((err) => {
