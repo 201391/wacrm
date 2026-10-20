@@ -34,15 +34,17 @@ export function StoreFooter() {
                 <Sprout className="w-4 h-4" />
               </div>
               <span className="font-extrabold text-lg text-slate-900">Jatrra</span>
-              <span className="text-[11px] text-slate-400 ml-2">
+              <span suppressHydrationWarning className="text-[11px] text-slate-400 ml-2">
                 {language === 'hi' ? 'ग्रामीण एवं कृषि ई-कॉमर्स प्लेटफॉर्म' : 'Rural & Agriculture E-Commerce'}
               </span>
             </div>
 
             {/* Quick Language Toggle in Footer */}
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg text-[11px]">
+            <div suppressHydrationWarning className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg text-[11px]">
               <span className="text-slate-500 font-medium px-1.5">Language / भाषा:</span>
               <button
+                type="button"
+                suppressHydrationWarning
                 onClick={() => setLanguage('en')}
                 className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${
                   language === 'en' ? 'bg-white text-[#0b7b3e] shadow-xs' : 'text-slate-600 hover:text-slate-900'
@@ -51,6 +53,8 @@ export function StoreFooter() {
                 English
               </button>
               <button
+                type="button"
+                suppressHydrationWarning
                 onClick={() => setLanguage('hi')}
                 className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${
                   language === 'hi' ? 'bg-[#0b7b3e] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
@@ -86,8 +90,8 @@ export function StoreFooter() {
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
-            <p>© {new Date().getFullYear()} Jatrra Agri Technologies Pvt Ltd. All rights reserved.</p>
-            <p>{t('footerTagline', '100% Genuine Quality • Fast Village Doorstep Logistics')}</p>
+            <p suppressHydrationWarning>© {new Date().getFullYear()} Jatrra Agri Technologies Pvt Ltd. All rights reserved.</p>
+            <p suppressHydrationWarning>{t('footerTagline', '100% Genuine Quality • Fast Village Doorstep Logistics')}</p>
           </div>
         </div>
       </footer>
