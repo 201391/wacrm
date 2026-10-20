@@ -6,13 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Sprout,
   Search,
-  Truck,
   Heart,
-  User,
   ShoppingCart,
   LayoutGrid,
   ChevronDown,
-  MapPin,
   MessageCircle,
   PhoneCall,
   LayoutDashboard,
@@ -38,21 +35,25 @@ export function StoreHeader() {
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
   const [helplineOpen, setHelplineOpen] = useState(false)
-  const [pincodeOpen, setPincodeOpen] = useState(false)
-  const [pincode, setPincode] = useState('Indore, M.P. (452001)')
   const [wishlistCount] = useState(2)
+
+  const whatsappSupportUrl = `https://wa.me/918815356175?text=${encodeURIComponent(
+    language === 'hi'
+      ? 'नमस्ते जात्रा, मुझे ग्राहक सहायता चाहिए'
+      : 'Hello Jatrra, I need customer support'
+  )}`
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchInput.trim()) {
-      router.push(`/store?search=${encodeURIComponent(searchInput.trim())}#popularSection`)
+      router.push(`/?search=${encodeURIComponent(searchInput.trim())}#popularSection`)
     } else {
-      router.push('/store#popularSection')
+      router.push('/#popularSection')
     }
   }
 
   const handleCategoryClick = (cat: string) => {
-    router.push(`/store?category=${cat}#popularSection`)
+    router.push(`/?category=${cat}#popularSection`)
   }
 
   return (
@@ -61,7 +62,7 @@ export function StoreHeader() {
         {/* Main Header Bar */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 sm:gap-4">
           {/* Brand Logo */}
-          <Link href="/store" className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0b7b3e] flex items-center justify-center text-white shadow-sm shadow-emerald-700/30 group-hover:scale-105 transition-transform">
               <Sprout className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
@@ -107,21 +108,19 @@ export function StoreHeader() {
             >
               <button
                 onClick={() => setLanguage('en')}
-                className={`px-2 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
-                  language === 'en'
-                    ? 'bg-[#0b7b3e] text-white shadow-2xs'
-                    : 'text-slate-600 hover:text-emerald-800'
-                }`}
+                className={`px-2 py-1 rounded text-[11px] font-bold transition cursor-pointer ${language === 'en'
+                  ? 'bg-[#0b7b3e] text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-emerald-800'
+                  }`}
               >
                 EN
               </button>
               <button
                 onClick={() => setLanguage('hi')}
-                className={`px-2 py-1 rounded text-[11px] font-bold transition cursor-pointer flex items-center gap-0.5 ${
-                  language === 'hi'
-                    ? 'bg-[#0b7b3e] text-white shadow-2xs'
-                    : 'text-slate-600 hover:text-emerald-800'
-                }`}
+                className={`px-2 py-1 rounded text-[11px] font-bold transition cursor-pointer flex items-center gap-0.5 ${language === 'hi'
+                  ? 'bg-[#0b7b3e] text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-emerald-800'
+                  }`}
               >
                 <span>हिंदी</span>
               </button>
@@ -135,14 +134,6 @@ export function StoreHeader() {
               <LayoutDashboard className="w-3.5 h-3.5 text-[#0b7b3e]" />
               <span>{t('crmAdmin', 'CRM Admin')}</span>
             </Link>
-
-            <button
-              onClick={() => toast.info(language === 'hi' ? 'पिनकोड के साथ ऑर्डर ट्रैकिंग सक्रिय है!' : 'Tracking updates synced with pin code!')}
-              className="hidden lg:flex flex-col items-center gap-0.5 hover:text-[#0b7b3e] transition cursor-pointer"
-            >
-              <Truck className="w-4 h-4" />
-              <span className="text-[11px] font-medium">{t('trackOrder', 'Track Order')}</span>
-            </button>
 
             <button
               onClick={() =>
@@ -163,19 +154,22 @@ export function StoreHeader() {
               <span className="text-[11px] font-medium hidden sm:inline">{t('wishlist', 'Wishlist')}</span>
             </button>
 
-            <button
-              onClick={() =>
-                toast.success(
-                  language === 'hi'
-                    ? 'किसान सदस्य (इंदौर, म.प्र.) के रूप में लॉगिन हैं'
-                    : 'Logged in as Farmer Member (Indore)'
-                )
-              }
-              className="flex flex-col items-center gap-0.5 hover:text-[#0b7b3e] transition cursor-pointer"
+            {/* WhatsApp Customer Support Button */}
+            <a
+              href={whatsappSupportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-0.5 text-emerald-700 hover:text-emerald-800 transition cursor-pointer group"
+              title={language === 'hi' ? 'व्हाट्सएप ग्राहक सहायता' : 'WhatsApp Customer Support'}
             >
-              <User className="w-4 h-4 text-slate-700" />
-              <span className="text-[11px] font-medium hidden sm:inline">{t('account', 'Account')}</span>
-            </button>
+              <div className="relative">
+                <MessageCircle className="w-4 h-4 text-[#0b7b3e] group-hover:scale-110 transition-transform" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-pulse ring-1 ring-white" />
+              </div>
+              <span className="text-[11px] font-semibold text-emerald-800 hidden sm:inline whitespace-nowrap">
+                {language === 'hi' ? 'कस्टमर सपोर्ट' : 'Support'}
+              </span>
+            </a>
 
             {/* Cart Trigger */}
             <button
@@ -260,7 +254,7 @@ export function StoreHeader() {
 
               {/* Nav Links */}
               <nav className="flex items-center gap-4 sm:gap-5 text-slate-600 whitespace-nowrap">
-                <Link href="/store" className="text-[#0b7b3e] font-bold hover:text-emerald-800">
+                <Link href="/" className="text-[#0b7b3e] font-bold hover:text-emerald-800">
                   {t('navHome', 'Home')}
                 </Link>
                 <a href="#popularSection" className="hover:text-[#0b7b3e] transition">
@@ -289,20 +283,6 @@ export function StoreHeader() {
                   <span>{t('farmerHelpline', 'Farmer Helpline')}</span>
                 </button>
               </nav>
-            </div>
-
-            {/* Right: Delivery Location */}
-            <div className="hidden sm:flex items-center gap-1.5 text-slate-500 text-xs flex-shrink-0">
-              <MapPin className="w-3.5 h-3.5 text-[#0b7b3e]" />
-              <span>
-                {t('deliverTo', 'Deliver to:')}{' '}
-                <strong
-                  onClick={() => setPincodeOpen(true)}
-                  className="text-slate-800 font-semibold cursor-pointer hover:underline"
-                >
-                  {pincode}
-                </strong>
-              </span>
             </div>
           </div>
         </div>
@@ -345,44 +325,7 @@ export function StoreHeader() {
         </DialogContent>
       </Dialog>
 
-      {/* PINCODE MODAL */}
-      <Dialog open={pincodeOpen} onOpenChange={setPincodeOpen}>
-        <DialogContent className="sm:max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-[#0b7b3e]" />
-              <span>{t('pincodeTitle', 'Select Delivery Village / Pincode')}</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              {t(
-                'pincodeDesc',
-                'Direct village doorstep logistics active across Madhya Pradesh, Rajasthan, Gujarat, and Maharashtra.'
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <input
-              type="text"
-              value={pincode}
-              onChange={(e) => setPincode(e.target.value)}
-              placeholder="e.g. Indore, M.P. (452001)"
-              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none focus:border-[#0b7b3e]"
-            />
-            <Button
-              onClick={() => {
-                setPincodeOpen(false)
-                toast.success(
-                  language === 'hi' ? `डिलीवरी स्थान सेट: ${pincode}` : `Delivery set to: ${pincode}`
-                )
-              }}
-              size="sm"
-              className="w-full bg-[#0b7b3e] hover:bg-[#086331] text-white text-xs font-semibold cursor-pointer"
-            >
-              {t('confirmLocation', 'Confirm Location')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Floating Mobile Cart Bar when items are in cart */}
       {totalCount > 0 && (

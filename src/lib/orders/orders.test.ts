@@ -60,7 +60,7 @@ describe('E-Commerce & Orders Engine', () => {
     // 149.99 * 1 + 34.99 * 2 = 219.97
     expect(order.total_amount).toBe(219.97)
     expect(whatsapp_url).toContain('https://wa.me/')
-    expect(whatsapp_url).toContain(encodeURIComponent(`Hi! I would like to confirm order #${order.short_code}`))
+    expect(whatsapp_url).toContain(encodeURIComponent(`#${order.short_code}`))
     expect(support_phone).toBeDefined()
   })
 

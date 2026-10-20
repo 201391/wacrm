@@ -1,7 +1,19 @@
 import fs from 'fs'
 import path from 'path'
 import { createClient } from '@supabase/supabase-js'
-import type { Order, OrderItem, OrderStatus, Product } from '@/types'
+import type {
+  Order,
+  OrderItem,
+  OrderStatus,
+  Product,
+  DeliveryAgent,
+  DeliveryStatus,
+  DriverManifestStats,
+  PaymentCollectionMethod,
+  CancellationReason,
+  ProofOfDeliveryType,
+  DeliveryResolution
+} from '@/types'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 
 // Lazy-initialized admin client
@@ -262,6 +274,146 @@ function seedMemoryProducts(accountId: string) {
   persistProductsToFile()
 }
 
+function getOrdersFilePath(): string {
+  const dir = path.join(process.cwd(), '.data')
+  if (!fs.existsSync(dir)) {
+    try {
+      fs.mkdirSync(dir, { recursive: true })
+    } catch {
+      // Ignore
+    }
+  }
+  return path.join(dir, 'orders.json')
+}
+
+export function persistOrdersToFile() {
+  try {
+    const file = getOrdersFilePath()
+    const uniqueOrders = Array.from(new Set(memoryOrders.values()))
+    fs.writeFileSync(file, JSON.stringify(uniqueOrders, null, 2), 'utf-8')
+  } catch (err) {
+    console.warn('[orders/store] could not write orders file:', err)
+  }
+}
+
+export function seedMemoryOrders(accountId: string) {
+  if (memoryOrders.size > 0) return
+
+  try {
+    const file = getOrdersFilePath()
+    if (fs.existsSync(file)) {
+      const content = fs.readFileSync(file, 'utf-8')
+      const parsed: Order[] = JSON.parse(content)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed.forEach((o) => {
+          memoryOrders.set(o.id, o)
+          memoryOrders.set(o.short_code, o)
+        })
+        return
+      }
+    }
+  } catch (err) {
+    console.warn('[orders/store] failed loading stored orders:', err)
+  }
+
+  // Seed realistic demo rural orders
+  const now = new Date()
+  const defaultDemoOrders: Order[] = [
+    {
+      id: 'ord-1024',
+      account_id: accountId,
+      short_code: '1024',
+      customer_name: 'Gurpreet Singh',
+      phone_number: '+91 98765 43210',
+      items: [
+        {
+          product_id: 'prod-1',
+          title: 'Balanced Cattle Feed Pellets',
+          price: 1249,
+          quantity: 2,
+          image_url: 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          product_id: 'prod-2',
+          title: 'Chelated Mineral Mixture',
+          price: 680,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1527153857715-3908f2ae5e81?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 3178,
+      status: 'CONFIRMED',
+      shipping_address: 'Village Kheri Gurna, Near Old Gurudwara, Rajpura, Punjab 140401',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Please deliver after 4 PM when tractors return from fields.',
+      created_at: new Date(now.getTime() - 2 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 1 * 3600 * 1000).toISOString(),
+      delivery_agent_id: null,
+      delivery_agent: null,
+      delivery_status: 'UNASSIGNED'
+    },
+    {
+      id: 'ord-1025',
+      account_id: accountId,
+      short_code: '1025',
+      customer_name: 'Manoj Patel',
+      phone_number: '+91 98220 11223',
+      items: [
+        {
+          product_id: 'prod-3',
+          title: 'Calci-Gold Liquid Calcium',
+          price: 849,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 849,
+      status: 'CONFIRMED',
+      shipping_address: 'Dairy Farm Plot 14, Anand Bypass, Anand, Gujarat 388001',
+      payment_preference: 'UPI on Delivery',
+      notes: 'Urgent for milking cows.',
+      created_at: new Date(now.getTime() - 4 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 3 * 3600 * 1000).toISOString(),
+      delivery_agent_id: null,
+      delivery_agent: null,
+      delivery_status: 'UNASSIGNED'
+    },
+    {
+      id: 'ord-1026',
+      account_id: accountId,
+      short_code: '1026',
+      customer_name: 'Suresh Verma',
+      phone_number: '+91 94140 77889',
+      items: [
+        {
+          product_id: 'prod-4',
+          title: 'Certified Hybrid Mustard Seed',
+          price: 520,
+          quantity: 4,
+          image_url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 2080,
+      status: 'PENDING_WHATSAPP',
+      shipping_address: 'Kishan Mandi Shop #4, Alwar, Rajasthan 301001',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Awaiting farmer confirmation via WhatsApp.',
+      created_at: new Date(now.getTime() - 6 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 6 * 3600 * 1000).toISOString(),
+      delivery_agent_id: null,
+      delivery_agent: null,
+      delivery_status: 'UNASSIGNED'
+    }
+  ]
+
+  defaultDemoOrders.forEach((o) => {
+    memoryOrders.set(o.id, o)
+    memoryOrders.set(o.short_code, o)
+  })
+
+  persistOrdersToFile()
+}
+
 // Helper to resolve an account ID
 export async function getDefaultAccountId(): Promise<string> {
   try {
@@ -433,6 +585,18 @@ export async function getProductById(id: string, accountId?: string): Promise<Pr
 }
 
 /**
+ * Sanitize metadata string by completely stripping script/style tags, HTML tags, and trimming.
+ */
+export function sanitizeMetaText(str?: string | null): string | null {
+  if (!str) return null
+  let cleaned = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  cleaned = cleaned.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+  cleaned = cleaned.replace(/<[^>]*>?/gm, '')
+  cleaned = cleaned.trim()
+  return cleaned || null
+}
+
+/**
  * Create a new product.
  */
 export async function createProduct(
@@ -464,6 +628,19 @@ export async function createProduct(
       'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=600&q=80'
     ],
     description: input.description || '',
+    brochure_url: input.brochure_url || null,
+    // SEO fields
+    meta_title: sanitizeMetaText(input.meta_title),
+    meta_description: sanitizeMetaText(input.meta_description),
+    canonical_url: input.canonical_url?.trim() || null,
+    keywords: Array.isArray(input.keywords) ? input.keywords.map((k) => k.trim()).filter(Boolean) : [],
+    og_title: sanitizeMetaText(input.og_title),
+    og_description: sanitizeMetaText(input.og_description),
+    og_image_url: input.og_image_url?.trim() || null,
+    twitter_card: input.twitter_card === 'summary' ? 'summary' : 'summary_large_image',
+    no_index: Boolean(input.no_index),
+    no_follow: Boolean(input.no_follow),
+    structured_data: input.structured_data || null,
     is_active: input.is_active !== undefined ? Boolean(input.is_active) : true,
     created_at: now,
     updated_at: now
@@ -482,7 +659,18 @@ export async function createProduct(
         stock: product.stock,
         images: product.images,
         description: product.description,
-        is_active: product.is_active
+        is_active: product.is_active,
+        meta_title: product.meta_title,
+        meta_description: product.meta_description,
+        canonical_url: product.canonical_url,
+        keywords: product.keywords,
+        og_title: product.og_title,
+        og_description: product.og_description,
+        og_image_url: product.og_image_url,
+        twitter_card: product.twitter_card,
+        no_index: product.no_index,
+        no_follow: product.no_follow,
+        structured_data: product.structured_data
       })
       .select('*')
       .single()
@@ -524,6 +712,18 @@ export async function updateProduct(
     original_price: updates.original_price !== undefined ? (updates.original_price ? Number(updates.original_price) : undefined) : existing.original_price,
     stock: updates.stock !== undefined ? Number(updates.stock) : existing.stock,
     images: Array.isArray(updates.images) ? updates.images : existing.images,
+    brochure_url: updates.brochure_url !== undefined ? updates.brochure_url : existing.brochure_url,
+    meta_title: updates.meta_title !== undefined ? sanitizeMetaText(updates.meta_title) : existing.meta_title,
+    meta_description: updates.meta_description !== undefined ? sanitizeMetaText(updates.meta_description) : existing.meta_description,
+    canonical_url: updates.canonical_url !== undefined ? (updates.canonical_url ? updates.canonical_url.trim() : null) : existing.canonical_url,
+    keywords: Array.isArray(updates.keywords) ? updates.keywords.map((k) => k.trim()).filter(Boolean) : existing.keywords,
+    og_title: updates.og_title !== undefined ? sanitizeMetaText(updates.og_title) : existing.og_title,
+    og_description: updates.og_description !== undefined ? sanitizeMetaText(updates.og_description) : existing.og_description,
+    og_image_url: updates.og_image_url !== undefined ? (updates.og_image_url ? updates.og_image_url.trim() : null) : existing.og_image_url,
+    twitter_card: updates.twitter_card !== undefined ? updates.twitter_card : existing.twitter_card,
+    no_index: updates.no_index !== undefined ? Boolean(updates.no_index) : existing.no_index,
+    no_follow: updates.no_follow !== undefined ? Boolean(updates.no_follow) : existing.no_follow,
+    structured_data: updates.structured_data !== undefined ? updates.structured_data : existing.structured_data,
     updated_at: new Date().toISOString()
   }
 
@@ -538,7 +738,18 @@ export async function updateProduct(
         stock: updated.stock,
         images: updated.images,
         description: updated.description,
-        is_active: updated.is_active
+        is_active: updated.is_active,
+        meta_title: updated.meta_title,
+        meta_description: updated.meta_description,
+        canonical_url: updated.canonical_url,
+        keywords: updated.keywords,
+        og_title: updated.og_title,
+        og_description: updated.og_description,
+        og_image_url: updated.og_image_url,
+        twitter_card: updated.twitter_card,
+        no_index: updated.no_index,
+        no_follow: updated.no_follow,
+        structured_data: updated.structured_data
       })
       .eq('id', id)
   } catch (err) {
@@ -572,6 +783,131 @@ export async function deleteProduct(id: string, accountId?: string): Promise<boo
     persistProductsToFile()
   }
   return had
+}
+
+export interface BulkProductImportSummary {
+  total: number
+  createdCount: number
+  updatedCount: number
+  failedCount: number
+  products: Product[]
+  errors: { row: number; title: string; reason: string }[]
+}
+
+/**
+ * Bulk create or update products from CSV / Google Sheets imports.
+ */
+export async function bulkCreateOrUpdateProducts(
+  items: Partial<Product>[],
+  options: { updateExisting?: boolean; accountId?: string } = {}
+): Promise<BulkProductImportSummary> {
+  const targetAccountId = options.accountId || (await getDefaultAccountId())
+  seedMemoryProducts(targetAccountId)
+
+  const updateExisting = options.updateExisting ?? true
+  const created: Product[] = []
+  let updatedCount = 0
+  let createdCount = 0
+  let failedCount = 0
+  const errors: { row: number; title: string; reason: string }[] = []
+
+  // Build lookup index of existing products by slug and lowercase title
+  const existingBySlug = new Map<string, Product>()
+  const existingByTitle = new Map<string, Product>()
+  for (const p of memoryProducts.values()) {
+    if (p.slug) existingBySlug.set(p.slug.toLowerCase(), p)
+    if (p.title) existingByTitle.set(p.title.trim().toLowerCase(), p)
+  }
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (!item.title || typeof item.price === 'undefined' || isNaN(Number(item.price))) {
+      failedCount++
+      errors.push({
+        row: i + 1,
+        title: item.title || 'Unknown',
+        reason: 'Missing required title or valid price',
+      })
+      continue
+    }
+
+    const cleanTitle = item.title.trim()
+    const cleanSlug =
+      item.slug?.trim().toLowerCase() ||
+      cleanTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '')
+
+    const existingMatch = updateExisting
+      ? existingBySlug.get(cleanSlug) || existingByTitle.get(cleanTitle.toLowerCase())
+      : null
+
+    if (existingMatch) {
+      // Update existing
+      const updated = await updateProduct(
+        existingMatch.id,
+        {
+          title: cleanTitle,
+          price: Number(item.price),
+          original_price:
+            item.original_price !== undefined ? Number(item.original_price) : existingMatch.original_price,
+          stock: item.stock !== undefined ? Number(item.stock) : existingMatch.stock,
+          category: item.category || existingMatch.category,
+          weight: item.weight || existingMatch.weight,
+          description: item.description !== undefined ? item.description : existingMatch.description,
+          images:
+            Array.isArray(item.images) && item.images.length > 0 ? item.images : existingMatch.images,
+          badge: item.badge !== undefined ? item.badge : existingMatch.badge,
+          badge_color: item.badge_color || existingMatch.badge_color,
+          is_active: item.is_active !== undefined ? Boolean(item.is_active) : existingMatch.is_active,
+        },
+        targetAccountId
+      )
+
+      if (updated) {
+        updatedCount++
+        created.push(updated)
+      } else {
+        failedCount++
+      }
+    } else {
+      // Create new
+      try {
+        const newProduct = await createProduct(
+          {
+            ...item,
+            title: cleanTitle,
+            slug: cleanSlug,
+            price: Number(item.price),
+            account_id: targetAccountId,
+          },
+          targetAccountId
+        )
+
+        createdCount++
+        created.push(newProduct)
+        if (newProduct.slug) existingBySlug.set(newProduct.slug.toLowerCase(), newProduct)
+        existingByTitle.set(cleanTitle.toLowerCase(), newProduct)
+      } catch (err: any) {
+        failedCount++
+        errors.push({
+          row: i + 1,
+          title: cleanTitle,
+          reason: err?.message || 'Creation failed',
+        })
+      }
+    }
+  }
+
+  return {
+    total: items.length,
+    createdCount,
+    updatedCount,
+    failedCount,
+    products: created,
+    errors,
+  }
 }
 
 /**
@@ -623,6 +959,9 @@ export async function createDraftOrder(params: CreateDraftOrderParams): Promise<
     shipping_address: params.shippingAddress || null,
     payment_preference: null,
     notes: params.notes || null,
+    delivery_agent_id: null,
+    delivery_agent: null,
+    delivery_status: 'UNASSIGNED',
     created_at: now,
     updated_at: now
   }
@@ -678,6 +1017,9 @@ export async function createDraftOrder(params: CreateDraftOrderParams): Promise<
  * Get order by ID or Short Code
  */
 export async function getOrder(idOrCode: string): Promise<Order | null> {
+  const accountId = await getDefaultAccountId()
+  seedMemoryOrders(accountId)
+
   // Check memory first
   if (memoryOrders.has(idOrCode)) {
     return memoryOrders.get(idOrCode)!
@@ -896,6 +1238,42 @@ export async function updateOrderStatus(
 }
 
 /**
+ * Assign or update delivery agent on an order.
+ */
+export async function updateOrderDeliveryAgent(
+  orderIdOrCode: string,
+  agent: DeliveryAgent | null,
+  deliveryStatus?: DeliveryStatus
+): Promise<Order | null> {
+  const order = await getOrder(orderIdOrCode)
+  if (!order) return null
+
+  order.delivery_agent_id = agent ? agent.id : null
+  order.delivery_agent = agent || null
+  order.delivery_status = deliveryStatus || (agent ? 'ASSIGNED' : 'UNASSIGNED')
+  order.updated_at = new Date().toISOString()
+
+  memoryOrders.set(order.short_code, order)
+  memoryOrders.set(order.id, order)
+  persistOrdersToFile()
+
+  try {
+    await supabaseAdmin()
+      .from('orders')
+      .update({
+        delivery_agent_id: order.delivery_agent_id,
+        delivery_status: order.delivery_status,
+        updated_at: order.updated_at
+      })
+      .eq('id', order.id)
+  } catch (err) {
+    console.warn('[orders/store] failed updating order delivery agent in DB:', err)
+  }
+
+  return order
+}
+
+/**
  * List orders for Admin Dashboard.
  */
 export async function listOrders(options?: {
@@ -905,6 +1283,7 @@ export async function listOrders(options?: {
   limit?: number
 }): Promise<Order[]> {
   const accountId = options?.accountId || await getDefaultAccountId()
+  seedMemoryOrders(accountId)
 
   try {
     let query = supabaseAdmin()
@@ -974,3 +1353,427 @@ export async function getOrderStats(accountId?: string) {
     totalRevenue: Math.round(totalRevenue * 100) / 100
   }
 }
+
+export const DEFAULT_AGENT_MANIFEST_STOPS: (accountId: string) => Order[] = (accountId) => {
+  const now = new Date()
+  return [
+    {
+      id: 'ord-1021',
+      account_id: accountId,
+      short_code: '1021',
+      customer_name: 'Harpreet Kaur',
+      phone_number: '+91 98141 23456',
+      items: [
+        {
+          product_id: 'prod-1',
+          title: 'Balanced Cattle Feed Pellets (50kg)',
+          price: 1249,
+          quantity: 2,
+          image_url: 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 2498,
+      status: 'CONFIRMED',
+      shipping_address: 'House 42, Green Avenue, Model Town, Patiala, Punjab 147001',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Near Gurudwara gate. Ring doorbell twice.',
+      created_at: new Date(now.getTime() - 3 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 1 * 3600 * 1000).toISOString(),
+      delivery_agent_id: 'agent-1',
+      delivery_status: 'OUT_FOR_DELIVERY',
+      stop_order: 1
+    },
+    {
+      id: 'ord-1022',
+      account_id: accountId,
+      short_code: '1022',
+      customer_name: 'Balwinder Singh',
+      phone_number: '+91 98722 34567',
+      items: [
+        {
+          product_id: 'prod-6',
+          title: 'Knapsack Battery Sprayer 16L',
+          price: 2450,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          product_id: 'prod-5',
+          title: 'Bio NPK Liquid Biofertilizer 1L',
+          price: 320,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 2770,
+      status: 'CONFIRMED',
+      shipping_address: 'Kisan Sewa Kendra, Near Main Bus Stand, Sanaur, Punjab 147103',
+      payment_preference: 'Prepaid (Razorpay / UPI)',
+      notes: 'Prepaid parcel. Please collect signature from shop manager.',
+      created_at: new Date(now.getTime() - 4 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 2 * 3600 * 1000).toISOString(),
+      delivery_agent_id: 'agent-1',
+      delivery_status: 'ASSIGNED',
+      stop_order: 2
+    },
+    {
+      id: 'ord-1023',
+      account_id: accountId,
+      short_code: '1023',
+      customer_name: 'Jasbir Dhillon',
+      phone_number: '+91 98881 98765',
+      items: [
+        {
+          product_id: 'prod-3',
+          title: 'Calci-Gold Liquid Calcium 5L',
+          price: 849,
+          quantity: 2,
+          image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          product_id: 'prod-2',
+          title: 'Chelated Mineral Mixture 5kg',
+          price: 680,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1527153857715-3908f2ae5e81?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 2378,
+      status: 'CONFIRMED',
+      shipping_address: 'Dhillon Dairy Farm, Village Bahadurgarh, Patiala, Punjab 147021',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Call 10 minutes before arrival so farm dogs can be secured.',
+      created_at: new Date(now.getTime() - 5 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 2 * 3600 * 1000).toISOString(),
+      delivery_agent_id: 'agent-1',
+      delivery_status: 'ASSIGNED',
+      stop_order: 3
+    },
+    {
+      id: 'ord-1024',
+      account_id: accountId,
+      short_code: '1024',
+      customer_name: 'Gurpreet Singh',
+      phone_number: '+91 98765 43210',
+      items: [
+        {
+          product_id: 'prod-1',
+          title: 'Balanced Cattle Feed Pellets (50kg)',
+          price: 1249,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          product_id: 'prod-2',
+          title: 'Chelated Mineral Mixture 5kg',
+          price: 680,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1527153857715-3908f2ae5e81?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 1929,
+      status: 'CONFIRMED',
+      shipping_address: 'Village Kheri Gurna, Near Old Tubewell, Rajpura, Punjab 140401',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Deliver at farm barn.',
+      created_at: new Date(now.getTime() - 6 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 3 * 3600 * 1000).toISOString(),
+      delivery_agent_id: 'agent-1',
+      delivery_status: 'ASSIGNED',
+      stop_order: 4
+    },
+    {
+      id: 'ord-1019',
+      account_id: accountId,
+      short_code: '1019',
+      customer_name: 'Satnam Singh',
+      phone_number: '+91 97811 55443',
+      items: [
+        {
+          product_id: 'prod-4',
+          title: 'Certified Hybrid Mustard Seed 2kg',
+          price: 520,
+          quantity: 3,
+          image_url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 1560,
+      status: 'CONFIRMED',
+      shipping_address: 'Main Grain Market, Shop 18, Samana, Punjab 147101',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Morning delivery completed.',
+      created_at: new Date(now.getTime() - 7 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 1 * 3600 * 1000).toISOString(),
+      delivery_agent_id: 'agent-1',
+      delivery_status: 'DELIVERED',
+      stop_order: 5,
+      payment_method_collected: 'CASH',
+      amount_collected: 1560,
+      delivered_at: new Date(now.getTime() - 1 * 3600 * 1000).toISOString()
+    },
+    {
+      id: 'ord-1018',
+      account_id: accountId,
+      short_code: '1018',
+      customer_name: 'Kuldeep Yadav',
+      phone_number: '+91 94160 12345',
+      items: [
+        {
+          product_id: 'prod-6',
+          title: 'Knapsack Battery Sprayer 16L',
+          price: 2450,
+          quantity: 1,
+          image_url: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      total_amount: 2450,
+      status: 'CANCELLED',
+      shipping_address: 'Flat 304, Royal City Apartments, Sirhind Road, Patiala, Punjab 147004',
+      payment_preference: 'Cash on Delivery (COD)',
+      notes: 'Security said customer out of town. Phone unreachable.',
+      created_at: new Date(now.getTime() - 8 * 3600 * 1000).toISOString(),
+      updated_at: new Date(now.getTime() - 2 * 3600 * 1000).toISOString(),
+      delivery_agent_id: 'agent-1',
+      delivery_status: 'CANCELLED',
+      stop_order: 6,
+      cancellation_reason: 'CUSTOMER_UNAVAILABLE',
+      delivery_notes: 'Door locked, tried calling 3 times with no answer.'
+    }
+  ]
+}
+
+export function seedDriverManifestIfEmpty(accountId: string, agentId: string = 'agent-1') {
+  seedMemoryOrders(accountId)
+  const existingForAgent = Array.from(new Set(memoryOrders.values())).filter(
+    (o) => o.delivery_agent_id === agentId
+  )
+  if (existingForAgent.length === 0) {
+    const defaultStops = DEFAULT_AGENT_MANIFEST_STOPS(accountId)
+    defaultStops.forEach((o) => {
+      memoryOrders.set(o.id, o)
+      memoryOrders.set(o.short_code, o)
+    })
+    persistOrdersToFile()
+  }
+}
+
+export function resetTestManifestStops(accountId: string = 'test-account-driver-portal', agentId: string = 'agent-1') {
+  seedMemoryOrders(accountId)
+  const defaultStops = DEFAULT_AGENT_MANIFEST_STOPS(accountId)
+  defaultStops.forEach((o) => {
+    memoryOrders.set(o.id, { ...o })
+    memoryOrders.set(o.short_code, { ...o })
+  })
+}
+
+
+/**
+ * Retrieve driver manifest (ordered stops & operational shift stats).
+ */
+export async function getDriverManifest(
+  agentId: string = 'agent-1',
+  accountId?: string
+): Promise<{
+  agent: DeliveryAgent | null
+  orders: Order[]
+  stats: DriverManifestStats
+}> {
+  const resolvedAccountId = accountId || (await getDefaultAccountId())
+  seedDriverManifestIfEmpty(resolvedAccountId, agentId)
+
+  // Fetch agent info
+  let agent: DeliveryAgent | null = null
+  try {
+    const { getDeliveryAgentById } = await import('@/lib/delivery-agents/store')
+    agent = await getDeliveryAgentById(agentId)
+  } catch (err) {
+    console.warn('[orders/store] could not load agent details:', err)
+  }
+
+  // Find all orders assigned to this agent (or all if agentId === 'ALL')
+  const allOrders = Array.from(new Set(memoryOrders.values()))
+  const orders = allOrders
+    .filter((o) => agentId === 'ALL' || o.delivery_agent_id === agentId)
+    .sort((a, b) => (a.stop_order || 99) - (b.stop_order || 99))
+
+  const totalAssigned = orders.length
+  const pendingDelivery = orders.filter(
+    (o) => o.delivery_status === 'ASSIGNED' || o.delivery_status === 'OUT_FOR_DELIVERY' || !o.delivery_status
+  ).length
+  const deliveredCount = orders.filter((o) => o.delivery_status === 'DELIVERED').length
+  const cancelledCount = orders.filter((o) => o.delivery_status === 'CANCELLED').length
+
+  const codCollected = orders
+    .filter((o) => o.delivery_status === 'DELIVERED' && o.payment_method_collected === 'CASH')
+    .reduce((sum, o) => sum + (o.amount_collected || 0), 0)
+
+  const upiCollected = orders
+    .filter((o) => o.delivery_status === 'DELIVERED' && o.payment_method_collected === 'UPI')
+    .reduce((sum, o) => sum + (o.amount_collected || 0), 0)
+
+  const totalCashDue = orders
+    .filter(
+      (o) =>
+        (o.delivery_status === 'ASSIGNED' || o.delivery_status === 'OUT_FOR_DELIVERY') &&
+        (!o.payment_preference ||
+          o.payment_preference.toLowerCase().includes('cod') ||
+          o.payment_preference.toLowerCase().includes('cash'))
+    )
+    .reduce((sum, o) => sum + (o.total_amount || 0), 0)
+
+  const stats: DriverManifestStats = {
+    totalAssigned,
+    pendingDelivery,
+    deliveredCount,
+    cancelledCount,
+    codCollected,
+    upiCollected,
+    totalCashDue
+  }
+
+  return {
+    agent,
+    orders,
+    stats
+  }
+}
+
+export interface ResolveDeliveryInput {
+  orderIdOrCode: string
+  delivery_status: 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED' | 'ASSIGNED'
+  payment_method?: PaymentCollectionMethod
+  amount_collected?: number
+  upi_reference?: string
+  cancellation_reason?: string
+  proof_of_delivery_type?: ProofOfDeliveryType
+  proof_of_delivery_data?: string
+  notes?: string
+}
+
+/**
+ * Resolve order delivery outcome (Delivered / Cancelled / Out for Delivery)
+ * with payment verification and Proof of Delivery.
+ */
+export async function resolveOrderDelivery(
+  input: ResolveDeliveryInput,
+  accountId?: string
+): Promise<{ order: Order; stats: DriverManifestStats }> {
+  const resolvedAccountId = accountId || (await getDefaultAccountId())
+  seedMemoryOrders(resolvedAccountId)
+
+  const order = await getOrder(input.orderIdOrCode)
+  if (!order) {
+    throw new Error(`Order ${input.orderIdOrCode} not found`)
+  }
+
+  const isCOD =
+    !order.payment_preference ||
+    order.payment_preference.toLowerCase().includes('cod') ||
+    order.payment_preference.toLowerCase().includes('cash')
+
+  // Validation
+  if (input.delivery_status === 'DELIVERED') {
+    if (isCOD && input.payment_method !== 'PREPAID') {
+      if (!input.payment_method || (input.payment_method !== 'CASH' && input.payment_method !== 'UPI')) {
+        throw new Error('Please select a payment collection method (Cash or UPI) for COD order')
+      }
+      if (
+        input.amount_collected === undefined ||
+        input.amount_collected === null ||
+        isNaN(Number(input.amount_collected)) ||
+        Number(input.amount_collected) < 0
+      ) {
+        throw new Error('Please enter a valid payment amount collected')
+      }
+    }
+  }
+
+  if (input.delivery_status === 'CANCELLED' && !input.cancellation_reason) {
+    throw new Error('Please select a cancellation reason')
+  }
+
+  // Update order fields
+  order.delivery_status = input.delivery_status
+  order.updated_at = new Date().toISOString()
+
+  if (input.delivery_status === 'DELIVERED') {
+    order.status = 'CONFIRMED'
+    order.payment_method_collected = input.payment_method || (isCOD ? 'CASH' : 'PREPAID')
+    order.amount_collected = input.amount_collected ?? (order.payment_method_collected === 'PREPAID' ? 0 : order.total_amount)
+    order.upi_reference = input.upi_reference || null
+    order.proof_of_delivery_type = input.proof_of_delivery_type || null
+    order.proof_of_delivery_data = input.proof_of_delivery_data || null
+    order.delivery_notes = input.notes || order.delivery_notes || null
+    order.delivered_at = new Date().toISOString()
+  } else if (input.delivery_status === 'CANCELLED') {
+    order.status = 'CANCELLED'
+    order.cancellation_reason = input.cancellation_reason || 'CUSTOMER_UNAVAILABLE'
+    order.delivery_notes = input.notes || order.delivery_notes || null
+  } else if (input.delivery_status === 'OUT_FOR_DELIVERY') {
+    if (input.notes) order.delivery_notes = input.notes
+  }
+
+  memoryOrders.set(order.id, order)
+  memoryOrders.set(order.short_code, order)
+  persistOrdersToFile()
+
+  // Update database if present
+  try {
+    await supabaseAdmin()
+      .from('orders')
+      .update({
+        delivery_status: order.delivery_status,
+        status: order.status,
+        payment_method_collected: order.payment_method_collected,
+        amount_collected: order.amount_collected,
+        upi_reference: order.upi_reference,
+        cancellation_reason: order.cancellation_reason,
+        proof_of_delivery_type: order.proof_of_delivery_type,
+        proof_of_delivery_data: order.proof_of_delivery_data,
+        delivery_notes: order.delivery_notes,
+        delivered_at: order.delivered_at,
+        updated_at: order.updated_at
+      })
+      .eq('id', order.id)
+  } catch (err) {
+    console.warn('[orders/store] could not update order delivery resolution in DB:', err)
+  }
+
+  // Synchronize agent state & statistics
+  if (order.delivery_agent_id) {
+    try {
+      const { getDeliveryAgentById, updateDeliveryAgent } = await import('@/lib/delivery-agents/store')
+      const agent = await getDeliveryAgentById(order.delivery_agent_id)
+      if (agent) {
+        if (input.delivery_status === 'DELIVERED') {
+          const nextActive = Math.max(0, (agent.active_orders_count || 1) - 1)
+          await updateDeliveryAgent(agent.id, {
+            total_deliveries: (agent.total_deliveries || 0) + 1,
+            status: nextActive === 0 ? 'AVAILABLE' : agent.status
+          })
+          agent.active_orders_count = nextActive
+        } else if (input.delivery_status === 'CANCELLED') {
+          const nextActive = Math.max(0, (agent.active_orders_count || 1) - 1)
+          await updateDeliveryAgent(agent.id, {
+            status: nextActive === 0 ? 'AVAILABLE' : agent.status
+          })
+          agent.active_orders_count = nextActive
+        } else if (input.delivery_status === 'OUT_FOR_DELIVERY') {
+          await updateDeliveryAgent(agent.id, {
+            status: 'ON_DELIVERY'
+          })
+        }
+      }
+    } catch (err) {
+      console.warn('[orders/store] failed updating agent metrics:', err)
+    }
+  }
+
+  const manifest = await getDriverManifest(order.delivery_agent_id || 'agent-1', resolvedAccountId)
+
+  return {
+    order,
+    stats: manifest.stats
+  }
+}
+

@@ -192,3 +192,90 @@ describe('generateReply — Anthropic', () => {
     expect(body.messages).toHaveLength(1)
   })
 })
+
+describe('generateReply — Gemini', () => {
+  it('calls the Generative Language endpoint and parses candidates and usage', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'Hello from Google Gemini!' }],
+            },
+          },
+        ],
+        usageMetadata: {
+          promptTokenCount: 20,
+          candidatesTokenCount: 8,
+          totalTokenCount: 28,
+        },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'gemini', model: 'gemini-2.5-flash', apiKey: 'AIzaSyTest' }),
+      systemPrompt: 'You are a helpful assistant',
+      messages: [{ role: 'user', content: 'Hi Gemini' }],
+    })
+
+    expect(res).toEqual({
+      text: 'Hello from Google Gemini!',
+      handoff: false,
+      usage: { promptTokens: 20, completionTokens: 8, totalTokens: 28 },
+    })
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('generativelanguage.googleapis.com')
+    expect(url).toContain('models/gemini-2.5-flash:generateContent?key=AIzaSyTest')
+    const body = JSON.parse(opts.body)
+    expect(body.systemInstruction.parts[0].text).toBe('You are a helpful assistant')
+    expect(body.contents[0].role).toBe('user')
+    expect(body.contents[0].parts[0].text).toBe('Hi Gemini')
+  })
+
+  it('detects handoff in Gemini response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        okResponse({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: 'Routing you to an agent [[HANDOFF]]' }],
+              },
+            },
+          ],
+        }),
+      ),
+    )
+
+    const res = await generateReply({
+      config: config({ provider: 'gemini', apiKey: 'AIzaSyTest' }),
+      systemPrompt: '',
+      messages: [{ role: 'user', content: 'I need human help' }],
+    })
+
+    expect(res.handoff).toBe(true)
+    expect(res.text).toBe('Routing you to an agent')
+  })
+
+  it('maps a 400 API_KEY_INVALID to an invalid_key AiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        errResponse(400, {
+          error: { message: 'API key not valid. Please pass a valid API key.' },
+        }),
+      ),
+    )
+
+    await expect(
+      generateReply({
+        config: config({ provider: 'gemini', apiKey: 'AIzaSyBad' }),
+        systemPrompt: '',
+        messages: [{ role: 'user', content: 'Ping' }],
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_key', status: 401 })
+  })
+})
+

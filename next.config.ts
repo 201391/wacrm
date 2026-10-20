@@ -50,8 +50,8 @@ const SECURITY_HEADERS = [
       // tiny inline assets.
       "img-src 'self' data: blob: https:",
       // Outbound media previews (blob: from MediaRecorder + file picker)
-      // and Supabase public-bucket audio/video the inbox renders.
-      "media-src 'self' blob: https://*.supabase.co",
+      // and Supabase public-bucket audio/video the inbox renders, plus storefront video banners.
+      "media-src 'self' blob: https: data: https://*.supabase.co",
       "font-src 'self' data:",
       // Supabase REST + realtime (WSS). All Meta API calls happen
       // server-side, so graph.facebook.com does not belong here.
@@ -156,6 +156,15 @@ const nextConfig: NextConfig = {
         // policy don't hurt).
         source: "/:path*",
         headers: [...SECURITY_HEADERS],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/store",
+        destination: "/",
+        permanent: false,
       },
     ];
   },

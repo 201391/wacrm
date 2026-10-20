@@ -228,3 +228,12 @@ html[data-theme="rose"] {
     @apply font-sans;
   }
 }
+
+@keyframes fillProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}

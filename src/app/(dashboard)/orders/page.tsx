@@ -19,7 +19,7 @@ import {
   Phone,
   User,
   MapPin,
-  DollarSign,
+  IndianRupee,
   Package,
   Layers,
   ArrowUpRight,
@@ -53,6 +53,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/use-auth'
+import { AssignOrderDialog } from '@/components/delivery-agents/assign-order-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const STATUS_CONFIG: Record<
   OrderStatus,
@@ -105,6 +107,43 @@ export default function OrdersPage() {
   const [customMessage, setCustomMessage] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
 
+  // Delivery agent assignment modal states
+  const [assignAgentOrder, setAssignAgentOrder] = useState<Order | null>(null)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+
+  const handleOpenAssignAgent = (order: Order) => {
+    setAssignAgentOrder(order)
+    setAssignDialogOpen(true)
+  }
+
+  const handleUnassignAgentFromOrder = async (order: Order) => {
+    try {
+      const res = await fetch(`/api/orders/${order.id}/assign-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: null }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to unassign agent')
+      }
+      toast.success(`Delivery agent removed from order #${order.short_code}`)
+      if (selectedOrder && selectedOrder.id === order.id) {
+        setSelectedOrder(data.order)
+      }
+      fetchOrders()
+    } catch (err: any) {
+      toast.error(err.message || 'Error unassigning agent')
+    }
+  }
+
+  const handleAssignSuccess = (updatedOrder: Order) => {
+    if (selectedOrder && selectedOrder.id === updatedOrder.id) {
+      setSelectedOrder(updatedOrder)
+    }
+    fetchOrders()
+  }
+
   // Fetch orders and stats
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -148,7 +187,7 @@ export default function OrdersPage() {
     setAddressInput(order.shipping_address || '')
     setEditingAddress(false)
     setCustomMessage(
-      `Hi! Just following up regarding your order #${order.short_code} for $${order.total_amount.toFixed(2)}. Would you like us to confirm and dispatch your items?`
+      `Hi! Just following up regarding your order #${order.short_code} for ₹${order.total_amount.toFixed(2)}. Would you like us to confirm and dispatch your items?`
     )
     setDetailOpen(true)
   }
@@ -238,7 +277,20 @@ export default function OrdersPage() {
 
         <div className="flex items-center gap-2.5">
           <Link
-            href="/store"
+            href="/driver"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants({
+              variant: 'outline',
+              className: 'rounded-xl border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 font-medium text-xs h-9 gap-1.5',
+            })}
+          >
+            <span>Driver Portal</span>
+            <Truck className="h-3.5 w-3.5" />
+          </Link>
+
+          <Link
+            href="/"
             target="_blank"
             rel="noopener noreferrer"
             className={buttonVariants({
@@ -303,11 +355,11 @@ export default function OrdersPage() {
         <div className="rounded-2xl border border-border/80 bg-card p-4.5 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-medium">Total Revenue</span>
-            <DollarSign className="h-4 w-4 text-emerald-500" />
+            <IndianRupee className="h-4 w-4 text-emerald-500" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold text-foreground">
-              ${stats.totalRevenue.toFixed(2)}
+              ₹{stats.totalRevenue.toFixed(2)}
             </span>
             <span className="text-xs text-emerald-500 font-medium">Confirmed</span>
           </div>
@@ -364,10 +416,11 @@ export default function OrdersPage() {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow className="border-border">
-                  <TableHead className="w-[130px] text-xs font-semibold">Order #</TableHead>
+                  <TableHead className="w-[120px] text-xs font-semibold">Order #</TableHead>
                   <TableHead className="text-xs font-semibold">Customer</TableHead>
                   <TableHead className="text-xs font-semibold">Items & Total</TableHead>
                   <TableHead className="text-xs font-semibold">Status</TableHead>
+                  <TableHead className="text-xs font-semibold">Delivery Agent</TableHead>
                   <TableHead className="text-xs font-semibold">WhatsApp Thread</TableHead>
                   <TableHead className="text-right text-xs font-semibold">Actions</TableHead>
                 </TableRow>
@@ -375,7 +428,7 @@ export default function OrdersPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={7} className="h-32 text-center text-sm text-muted-foreground">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
                         <span>Loading orders...</span>
@@ -384,7 +437,7 @@ export default function OrdersPage() {
                   </TableRow>
                 ) : orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={7} className="h-32 text-center text-sm text-muted-foreground">
                       No orders found matching criteria.
                     </TableCell>
                   </TableRow>
@@ -425,7 +478,7 @@ export default function OrdersPage() {
                         <TableCell>
                           <div className="space-y-0.5">
                             <p className="text-xs font-semibold text-foreground">
-                              ${order.total_amount.toFixed(2)}
+                              ₹{order.total_amount.toFixed(2)}
                             </p>
                             <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">
                               {order.items.length} {order.items.length === 1 ? 'item' : 'items'} (
@@ -442,6 +495,36 @@ export default function OrdersPage() {
                             <StatusIcon className="h-3 w-3" />
                             {statusMeta.label}
                           </span>
+                        </TableCell>
+
+                        {/* Delivery Agent Assignment */}
+                        <TableCell>
+                          {order.delivery_agent ? (
+                            <div className="space-y-0.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAssignAgent(order)}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline group"
+                                title="Click to reassign agent"
+                              >
+                                <Truck className="h-3.5 w-3.5 text-emerald-500" />
+                                <span>{order.delivery_agent.name}</span>
+                              </button>
+                              <p className="text-[10px] text-muted-foreground font-mono">
+                                {order.delivery_agent.vehicle_number}
+                              </p>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenAssignAgent(order)}
+                              className="h-7 text-[11px] rounded-lg border-dashed border-border hover:border-emerald-500/50 hover:text-emerald-500 px-2 font-normal"
+                            >
+                              <Truck className="h-3 w-3 mr-1 text-muted-foreground" />
+                              Assign Agent
+                            </Button>
+                          )}
                         </TableCell>
 
                         {/* WhatsApp Snippet */}
@@ -528,7 +611,7 @@ export default function OrdersPage() {
                       {prod.slug}
                     </TableCell>
                     <TableCell className="text-xs font-bold text-foreground">
-                      ${Number(prod.price).toFixed(2)}
+                      ₹{Number(prod.price).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-xs">
                       {prod.stock > 0 ? (
@@ -599,11 +682,11 @@ export default function OrdersPage() {
                       <div>
                         <p className="font-medium text-foreground">{item.title}</p>
                         <p className="text-muted-foreground">
-                          {item.quantity} x ${Number(item.price).toFixed(2)}
+                          {item.quantity} x ₹{Number(item.price).toFixed(2)}
                         </p>
                       </div>
                       <span className="font-semibold text-foreground">
-                        ${(Number(item.price) * item.quantity).toFixed(2)}
+                        ₹{(Number(item.price) * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -611,7 +694,7 @@ export default function OrdersPage() {
                 <div className="pt-2 border-t border-border flex justify-between items-baseline text-sm font-bold">
                   <span>Total Amount</span>
                   <span className="text-emerald-500 text-base">
-                    ${selectedOrder.total_amount.toFixed(2)}
+                    ₹{selectedOrder.total_amount.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -677,6 +760,87 @@ export default function OrdersPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Delivery Agent Assignment Card */}
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Truck className="h-3.5 w-3.5 text-emerald-500" />
+                    Delivery Agent & Fulfillment
+                  </h4>
+                  {selectedOrder.delivery_agent && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAssignAgent(selectedOrder)}
+                      className="text-xs text-emerald-500 hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      <span>Change Agent</span>
+                    </button>
+                  )}
+                </div>
+
+                {selectedOrder.delivery_agent ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border/80">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-border">
+                        <AvatarImage src={selectedOrder.delivery_agent.avatar_url || ''} />
+                        <AvatarFallback className="text-xs font-bold bg-muted text-foreground">
+                          {selectedOrder.delivery_agent.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-foreground">
+                            {selectedOrder.delivery_agent.name}
+                          </p>
+                          <Badge
+                            variant="secondary"
+                            className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-[10px] py-0 px-1.5"
+                          >
+                            {selectedOrder.delivery_status || 'ASSIGNED'}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground font-mono flex items-center gap-2">
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-2.5 w-2.5" />
+                            {selectedOrder.delivery_agent.phone}
+                          </span>
+                          <span>•</span>
+                          <span className="font-semibold text-foreground/80">
+                            {selectedOrder.delivery_agent.vehicle_number}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleUnassignAgentFromOrder(selectedOrder)}
+                      className="h-8 text-[11px] text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 px-2.5 self-end sm:self-center"
+                    >
+                      Unassign Agent
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-dashed border-border/80">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-medium text-foreground">No delivery partner assigned</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Select an available delivery agent to dispatch and track fulfillment.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenAssignAgent(selectedOrder)}
+                      className="rounded-xl h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0"
+                    >
+                      <Truck className="h-3.5 w-3.5 mr-1.5" />
+                      Assign Delivery Agent
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Status Manual Override Controls */}
@@ -752,6 +916,14 @@ export default function OrdersPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Assign Delivery Agent Dialog */}
+      <AssignOrderDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        order={assignAgentOrder}
+        onSuccess={handleAssignSuccess}
+      />
     </div>
   )
 }

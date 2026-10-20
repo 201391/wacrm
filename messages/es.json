@@ -28,6 +28,8 @@
     "automations": "Automatizaciones",
     "orders": "Pedidos",
     "products": "Productos",
+    "mediaLibrary": "Biblioteca de Medios",
+    "deliveryAgents": "Agentes de Entrega",
     "flows": "Flujos",
     "aiAgents": "Agentes de IA",
     "settings": "Configuración",
@@ -1887,7 +1889,17 @@
       "reindexTooltip": "Volver a generar los embeddings de todos los documentos (p. ej. después de agregar una clave de embeddings)",
       "editDoc": "Editar",
       "deleteDoc": "Eliminar",
-      "loading": "Cargando…"
+      "loading": "Cargando…",
+      "uploadFiles": "Subir archivos",
+      "uploadFilesDesc": "Sube documentos para alimentar la base de conocimientos del agente de IA directamente.",
+      "dropFilesHere": "Arrastra y suelta archivos aquí, o haz clic para explorar",
+      "supportedFormats": "Formatos admitidos: TXT, Markdown (.md), CSV, JSON, HTML, PDF (hasta 15 MB cada uno)",
+      "uploading": "Subiendo e indexando…",
+      "uploadAndIngest": "Subir e indexar ({count})",
+      "uploadSuccess": "Se subieron e indexaron {count} documento(s).",
+      "uploadFailed": "Error al subir documento(s).",
+      "clearSelection": "Limpiar",
+      "selectFiles": "Seleccionar archivos"
     }
   },
   "SignupPage": {

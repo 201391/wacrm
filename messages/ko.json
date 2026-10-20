@@ -28,6 +28,8 @@
     "automations": "자동화",
     "orders": "주문",
     "products": "상품 관리",
+    "mediaLibrary": "미디어 라이브러리",
+    "deliveryAgents": "배송 기사 관리",
     "flows": "플로우",
     "aiAgents": "AI 에이전트",
     "settings": "설정",
@@ -1899,7 +1901,17 @@
       "reindexTooltip": "모든 문서를 다시 임베딩합니다 (예: 임베딩 키 추가 후)",
       "editDoc": "수정",
       "deleteDoc": "삭제",
-      "loading": "불러오는 중…"
+      "loading": "불러오는 중…",
+      "uploadFiles": "파일 업로드",
+      "uploadFilesDesc": "AI 에이전트의 지식 베이스에 바로 문서를 업로드해 학습시킵니다.",
+      "dropFilesHere": "여기에 파일을 끌어다 놓거나 클릭하여 찾아보기",
+      "supportedFormats": "지원 형식: TXT, Markdown (.md), CSV, JSON, HTML, PDF (파일당 최대 15MB)",
+      "uploading": "업로드 및 색인 중…",
+      "uploadAndIngest": "업로드 및 색인 ({count})",
+      "uploadSuccess": "문서 {count}개를 업로드하고 색인했습니다.",
+      "uploadFailed": "문서 업로드에 실패했습니다.",
+      "clearSelection": "지우기",
+      "selectFiles": "파일 선택"
     }
   },
   "SignupPage": {

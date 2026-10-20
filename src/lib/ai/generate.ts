@@ -6,6 +6,7 @@ import {
   type GenerateResult,
 } from './types'
 import { HANDOFF_SENTINEL, aiRequestTimeoutMs } from './defaults'
+import { generateGemini } from './providers/gemini'
 import { generateOpenAi } from './providers/openai'
 import { generateAnthropic } from './providers/anthropic'
 
@@ -35,6 +36,9 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
 
   let result: { text: string; usage: AiUsage | null }
   switch (config.provider) {
+    case 'gemini':
+      result = await generateGemini(providerArgs)
+      break
     case 'openai':
       result = await generateOpenAi(providerArgs)
       break

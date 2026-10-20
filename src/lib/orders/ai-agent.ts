@@ -161,12 +161,12 @@ async function runDeterministicOrderTurn(
 ): Promise<string> {
   const text = incomingText.trim().toLowerCase()
   const itemsSummary = order.items
-    .map(i => `• ${i.quantity}x *${i.title}* - $${(Number(i.price) * i.quantity).toFixed(2)}`)
+    .map(i => `• ${i.quantity}x *${i.title}* - ₹${(Number(i.price) * i.quantity).toFixed(2)}`)
     .join('\n')
 
   // Check if order is already confirmed
   if (order.status === 'CONFIRMED') {
-    return `🎉 Order *#${order.short_code}* is already confirmed and in processing!\n\n📍 *Shipping to:* ${order.shipping_address || 'Address on file'}\n💰 *Total:* $${order.total_amount.toFixed(2)}\n\nIf you need any adjustments, please let our team know.`
+    return `🎉 Order *#${order.short_code}* is already confirmed and in processing!\n\n📍 *Shipping to:* ${order.shipping_address || 'Address on file'}\n💰 *Total:* ₹${order.total_amount.toFixed(2)}\n\nIf you need any adjustments, please let our team know.`
   }
 
   // 1. Initial greeting / order reference received from deep link
@@ -179,7 +179,7 @@ async function runDeterministicOrderTurn(
     return (
       `👋 Hi there! Thank you for reaching out to confirm your order!\n\n` +
       `📦 *Order #${order.short_code} Details:*\n${itemsSummary}\n\n` +
-      `💰 *Total Amount:* $${order.total_amount.toFixed(2)}\n\n` +
+      `💰 *Total Amount:* ₹${order.total_amount.toFixed(2)}\n\n` +
       `📍 To complete your delivery, please reply with your *full delivery shipping address* (Street, City, Postal Code).`
     )
   }
@@ -204,7 +204,7 @@ async function runDeterministicOrderTurn(
       `🎉 *Order Confirmed!* Thank you!\n\n` +
       `Your order *#${order.short_code}* has been successfully placed.\n\n` +
       `📦 *Items:* ${order.items.map(i => `${i.quantity}x ${i.title}`).join(', ')}\n` +
-      `💰 *Total:* $${order.total_amount.toFixed(2)} (Cash on Delivery)\n` +
+      `💰 *Total:* ₹${order.total_amount.toFixed(2)} (Cash on Delivery)\n` +
       `📍 *Delivery Address:* ${order.shipping_address}\n\n` +
       `🚚 Our team is packing your items now. We will notify you here once your shipment is on the way!`
     )
@@ -216,7 +216,7 @@ async function runDeterministicOrderTurn(
     return (
       `📍 *Delivery Address Received:*\n` +
       `"${incomingText.trim()}"\n\n` +
-      `💰 *Total Amount:* $${order.total_amount.toFixed(2)}\n` +
+      `💰 *Total Amount:* ₹${order.total_amount.toFixed(2)}\n` +
       `💳 *Payment:* Cash on Delivery (COD)\n\n` +
       `Reply *YES* or *CONFIRM* to finalize and dispatch your order!`
     )
@@ -225,7 +225,7 @@ async function runDeterministicOrderTurn(
   // Default clarification prompt
   return (
     `📦 *Order #${order.short_code}*\n` +
-    `Total: $${order.total_amount.toFixed(2)}\n` +
+    `Total: ₹${order.total_amount.toFixed(2)}\n` +
     (order.shipping_address
       ? `Delivery address: ${order.shipping_address}\n\nPlease reply *CONFIRM* to place your order.`
       : `Please provide your full *delivery address* so we can confirm your order.`)

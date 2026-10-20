@@ -39,13 +39,21 @@ const MASKED_KEY = '••••••••••••••••';
 const HANDOFF_QUEUE = '__queue__';
 
 const PROVIDER_LABEL: Record<AiProvider, string> = {
+  gemini: 'Google Gemini',
   openai: 'OpenAI',
   anthropic: 'Anthropic (Claude)',
 };
 
 const KEY_PLACEHOLDER: Record<AiProvider, string> = {
+  gemini: 'AIzaSy...',
   openai: 'sk-...',
   anthropic: 'sk-ant-...',
+};
+
+const MODEL_SUGGESTIONS: Record<AiProvider, string[]> = {
+  gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+  openai: ['gpt-4o-mini', 'gpt-4o'],
+  anthropic: ['claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest'],
 };
 
 export function AiConfig() {
@@ -59,8 +67,8 @@ export function AiConfig() {
   const [removing, setRemoving] = useState(false);
 
   const [configured, setConfigured] = useState(false);
-  const [provider, setProvider] = useState<AiProvider>('openai');
-  const [model, setModel] = useState(AI_PROVIDER_DEFAULT_MODEL.openai);
+  const [provider, setProvider] = useState<AiProvider>('gemini');
+  const [model, setModel] = useState(AI_PROVIDER_DEFAULT_MODEL.gemini);
   const [apiKey, setApiKey] = useState('');
   const [keyEdited, setKeyEdited] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -129,6 +137,7 @@ export function AiConfig() {
   const handleProviderChange = (next: AiProvider) => {
     setProvider(next);
     const isDefaultModel =
+      model === AI_PROVIDER_DEFAULT_MODEL.gemini ||
       model === AI_PROVIDER_DEFAULT_MODEL.openai ||
       model === AI_PROVIDER_DEFAULT_MODEL.anthropic ||
       model.trim() === '';
@@ -277,6 +286,7 @@ export function AiConfig() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="gemini">{PROVIDER_LABEL.gemini}</SelectItem>
                     <SelectItem value="openai">{PROVIDER_LABEL.openai}</SelectItem>
                     <SelectItem value="anthropic">
                       {PROVIDER_LABEL.anthropic}
@@ -294,6 +304,24 @@ export function AiConfig() {
                   placeholder={AI_PROVIDER_DEFAULT_MODEL[provider]}
                   disabled={disabled}
                 />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] font-medium text-muted-foreground">Suggestions:</span>
+                  {MODEL_SUGGESTIONS[provider]?.map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => setModel(sug)}
+                      disabled={disabled}
+                      className={`rounded px-2 py-0.5 text-[11px] font-mono transition-colors ${
+                        model === sug
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                          : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/60'
+                      }`}
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

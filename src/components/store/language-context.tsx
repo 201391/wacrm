@@ -234,6 +234,34 @@ const UI_STRINGS: Translations = {
     en: 'Standard Pack',
     hi: 'मानक पैक',
   },
+  showMoreProducts: {
+    en: 'Show More Products',
+    hi: 'और उत्पाद देखें',
+  },
+  showAllProducts: {
+    en: 'Show All',
+    hi: 'सभी देखें',
+  },
+  showingCountText: {
+    en: 'Showing',
+    hi: 'प्रदर्शित',
+  },
+  ofText: {
+    en: 'of',
+    hi: 'कुल',
+  },
+  productsText: {
+    en: 'products',
+    hi: 'उत्पाद',
+  },
+  allProductsLoaded: {
+    en: 'Showing all available products',
+    hi: 'सभी उपलब्ध उत्पाद प्रदर्शित हैं',
+  },
+  showLessProducts: {
+    en: 'Show less (top 10)',
+    hi: 'कम दिखाएं (शुरुआती 10)',
+  },
 
   // Three Promotional Banners
   promo1Badge: {

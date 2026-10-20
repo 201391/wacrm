@@ -8,12 +8,9 @@ import {
   Trash2,
   ShoppingBag,
   MessageCircle,
-  Truck,
-  Check,
   Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
 
 export function CartDrawer() {
   const {
@@ -25,33 +22,11 @@ export function CartDrawer() {
     updateQuantity,
     checkoutOnWhatsApp,
     isCheckingOut,
-    clearCart,
   } = useCart()
 
   const { t, language } = useStoreLanguage()
 
   if (!isOpen) return null
-
-  const handleDirectCheckout = () => {
-    if (items.length === 0) {
-      toast.error(language === 'hi' ? 'आपकी कार्ट खाली है!' : 'Cart is empty!')
-      return
-    }
-    toast.success(
-      language === 'hi'
-        ? 'कैश ऑन डिलीवरी / यूपीआई गेटवे पर रीडायरेक्ट कर रहे हैं...'
-        : 'Redirecting to Cash on Delivery / UPI gateway...'
-    )
-    setTimeout(() => {
-      toast.success(
-        language === 'hi'
-          ? 'ऑर्डर सफलतापूर्वक दर्ज हो गया! हम जल्द ही आपके गाँव के पते पर भेजेंगे।'
-          : 'Order placed successfully! We will dispatch to your village address soon.'
-      )
-      clearCart()
-      closeCart()
-    }, 1200)
-  }
 
   return (
     <>
@@ -84,17 +59,6 @@ export function CartDrawer() {
           >
             <X className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* Free Delivery Notice */}
-        <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100 text-[11px] text-emerald-800 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 font-medium">
-            <Truck className="w-3.5 h-3.5 text-emerald-700" />
-            <span>{t('freeDeliveryBadge', 'Free Village Delivery on orders over ₹999')}</span>
-          </span>
-          <span className="font-bold text-emerald-700 text-[10px] bg-emerald-200/60 px-1.5 py-0.5 rounded">
-            {language === 'hi' ? 'सक्रिय' : 'Active'}
-          </span>
         </div>
 
         {/* Cart Items Scroll Area */}
@@ -179,14 +143,10 @@ export function CartDrawer() {
         {/* Drawer Footer */}
         {items.length > 0 && (
           <div className="p-4 border-t border-slate-100 bg-slate-50 space-y-3">
-            <div className="space-y-1 text-xs text-slate-600">
+            <div className="space-y-1.5 text-xs text-slate-600">
               <div className="flex justify-between">
                 <span>{t('subtotal', 'Subtotal')}</span>
                 <span className="font-bold text-slate-900">₹{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-emerald-700 font-medium">
-                <span>{t('villageDelivery', 'Village Delivery')}</span>
-                <span>{t('free', 'FREE')}</span>
               </div>
               <div className="border-t border-slate-200 pt-1.5 flex justify-between font-bold text-slate-900 text-sm">
                 <span>{t('totalAmount', 'Total Amount')}</span>
@@ -194,21 +154,18 @@ export function CartDrawer() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="pt-1">
               <Button
                 onClick={checkoutOnWhatsApp}
                 disabled={isCheckingOut}
-                className="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
+                className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>{isCheckingOut ? (language === 'hi' ? 'खुल रहा है...' : 'Opening...') : t('whatsAppBuy', 'WhatsApp Buy')}</span>
-              </Button>
-              <Button
-                onClick={handleDirectCheckout}
-                className="py-2.5 px-2 bg-[#0b7b3e] hover:bg-[#086331] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>{t('checkout', 'Checkout')}</span>
+                <MessageCircle className="w-4 h-4 fill-white text-white" />
+                <span>
+                  {isCheckingOut
+                    ? (language === 'hi' ? 'व्हाट्सएप खुल रहा है...' : 'Opening WhatsApp...')
+                    : t('whatsAppBuy', 'WhatsApp Buy')}
+                </span>
               </Button>
             </div>
           </div>

@@ -721,6 +721,19 @@ export interface Product {
   badge?: string;
   badge_color?: string;
   is_active: boolean;
+  brochure_url?: string | null;
+  // SEO & Meta Settings (migration 046)
+  meta_title?: string | null;
+  meta_description?: string | null;
+  canonical_url?: string | null;
+  keywords?: string[];
+  og_title?: string | null;
+  og_description?: string | null;
+  og_image_url?: string | null;
+  twitter_card?: 'summary' | 'summary_large_image';
+  no_index?: boolean;
+  no_follow?: boolean;
+  structured_data?: Record<string, any> | null;
   created_at: string;
   updated_at: string;
 }
@@ -732,6 +745,10 @@ export interface OrderItem {
   quantity: number;
   image_url?: string | null;
 }
+
+export * from './delivery-agent';
+export * from './media';
+import type { DeliveryAgent, DeliveryStatus } from './delivery-agent';
 
 export type OrderStatus = 'DRAFT' | 'PENDING_WHATSAPP' | 'CONFIRMED' | 'CANCELLED';
 
@@ -751,6 +768,19 @@ export interface Order {
   notes?: string | null;
   created_at: string;
   updated_at: string;
+  // Delivery agent assignment & resolution
+  delivery_agent_id?: string | null;
+  delivery_agent?: DeliveryAgent | null;
+  delivery_status?: DeliveryStatus;
+  stop_order?: number;
+  payment_method_collected?: 'CASH' | 'UPI' | 'PREPAID' | null;
+  amount_collected?: number | null;
+  upi_reference?: string | null;
+  cancellation_reason?: string | null;
+  proof_of_delivery_type?: 'PHOTO' | 'SIGNATURE' | 'OTP' | null;
+  proof_of_delivery_data?: string | null;
+  delivery_notes?: string | null;
+  delivered_at?: string | null;
   // Hydrated joins for admin views
   contact?: Contact | null;
   conversation?: Conversation | null;

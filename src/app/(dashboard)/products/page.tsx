@@ -13,7 +13,7 @@ import {
   Eye,
   EyeOff,
   Image as ImageIcon,
-  DollarSign,
+  IndianRupee,
   Layers,
   Sparkles,
   CheckCircle2,
@@ -30,8 +30,22 @@ import {
   Tag,
   Edit3,
   Loader2,
+  ArrowUp,
+  ArrowDown,
+  Sliders,
+  FileSpreadsheet,
+  FileText,
+  Folder,
+  Globe,
 } from 'lucide-react'
 import type { Product } from '@/types'
+import type { StoreBannerSlide, PromoBannerCard } from '@/types/banner'
+import { DEFAULT_PROMO_BANNERS, PROMO_THEME_STYLES } from '@/types/banner'
+import { BANNER_PHOTO_PRESETS } from '@/components/store/store-banner-carousel'
+import { PromoBannersDialog } from '@/components/store/promo-banners-dialog'
+import { BulkImportModal } from '@/components/products/bulk-import-modal'
+import { MediaPickerModal } from '@/components/media/media-picker-modal'
+import { ProductSeoForm } from '@/components/products/product-seo-form'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -155,25 +169,59 @@ export default function ProductsDashboardPage() {
   const [formBadge, setFormBadge] = useState('')
   const [formBadgeColor, setFormBadgeColor] = useState('bg-amber-500 text-white')
   const [formImageUrl, setFormImageUrl] = useState('')
+  const [formGalleryImages, setFormGalleryImages] = useState<string[]>([])
+  const [formBrochureUrl, setFormBrochureUrl] = useState<string>('')
   const [formDescription, setFormDescription] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
+
+  // SEO & Meta Settings State
+  const [productTab, setProductTab] = useState<'general' | 'seo'>('general')
+  const [formMetaTitle, setFormMetaTitle] = useState('')
+  const [formMetaDescription, setFormMetaDescription] = useState('')
+  const [formCanonicalUrl, setFormCanonicalUrl] = useState('')
+  const [formKeywords, setFormKeywords] = useState<string[]>([])
+  const [formOgTitle, setFormOgTitle] = useState('')
+  const [formOgDescription, setFormOgDescription] = useState('')
+  const [formOgImageUrl, setFormOgImageUrl] = useState('')
+  const [formTwitterCard, setFormTwitterCard] = useState<'summary' | 'summary_large_image'>('summary_large_image')
+  const [formNoIndex, setFormNoIndex] = useState(false)
+  const [formNoFollow, setFormNoFollow] = useState(false)
+
+  // Media Picker Dialog states
+  const [productMainImagePickerOpen, setProductMainImagePickerOpen] = useState(false)
+  const [productGalleryPickerOpen, setProductGalleryPickerOpen] = useState(false)
+  const [productBrochurePickerOpen, setProductBrochurePickerOpen] = useState(false)
+  const [productOgPickerOpen, setProductOgPickerOpen] = useState(false)
+  const [bannerMediaPickerOpen, setBannerMediaPickerOpen] = useState(false)
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Banner Customization State
+  // Banner Customization State (Multi-Banner with 2-Second Rotation)
   const [bannerDialogOpen, setBannerDialogOpen] = useState(false)
   const [savingBanner, setSavingBanner] = useState(false)
-  const [bannerTagline, setBannerTagline] = useState('FRESH • RELIABLE • QUALITY')
-  const [bannerTitle, setBannerTitle] = useState('Farm & Rural Essentials Delivered to')
-  const [bannerHighlighted, setBannerHighlighted] = useState('Your Doorstep')
-  const [bannerDescription, setBannerDescription] = useState('Shop lab-verified cattle feed, high-yield hybrid seeds, bio-fertilizers, knapsack sprayers, and sturdy village kitchen cookware. Delivered straight to your doorstep or panchayat.')
-  const [bannerImageUrl, setBannerImageUrl] = useState('https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80')
-  const [bannerBadgeCat, setBannerBadgeCat] = useState('High Efficiency')
-  const [bannerBadgeTitle, setBannerBadgeTitle] = useState('Peak Farm Yield')
-  const [bannerBadgeEmoji, setBannerBadgeEmoji] = useState('🚜')
+  const [bannersList, setBannersList] = useState<StoreBannerSlide[]>([])
+  const [bannerIntervalSec, setBannerIntervalSec] = useState(2)
+  const [isAddingNewSlide, setIsAddingNewSlide] = useState(false)
+  const [editingSlideId, setEditingSlideId] = useState<string | null>(null)
+
+  // 3 Promotional Banners State
+  const [promoBannersDialogOpen, setPromoBannersDialogOpen] = useState(false)
+  const [promoBannersList, setPromoBannersList] = useState<PromoBannerCard[]>(DEFAULT_PROMO_BANNERS)
+
+  // Bulk Import Modal State
+  const [bulkImportOpen, setBulkImportOpen] = useState(false)
+
+  // Slide Form Fields
+  const [slideFormTitle, setSlideFormTitle] = useState('')
+  const [slideFormSubtitle, setSlideFormSubtitle] = useState('')
+  const [slideFormBadgeText, setSlideFormBadgeText] = useState('')
+  const [slideFormBadgeEmoji, setSlideFormBadgeEmoji] = useState('🌾')
+  const [slideFormImageUrl, setSlideFormImageUrl] = useState('')
+  const [slideFormCategory, setSlideFormCategory] = useState('all')
+  const [slideFormCtaText, setSlideFormCtaText] = useState('Shop Now')
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -196,15 +244,14 @@ export default function ProductsDashboardPage() {
     try {
       const res = await fetch('/api/store/banner')
       const data = await res.json()
-      if (data.banner) {
-        setBannerTagline(data.banner.tagline)
-        setBannerTitle(data.banner.title)
-        setBannerHighlighted(data.banner.highlightedWord)
-        setBannerDescription(data.banner.description)
-        setBannerImageUrl(data.banner.imageUrl)
-        setBannerBadgeCat(data.banner.badgeCategory)
-        setBannerBadgeTitle(data.banner.badgeTitle)
-        setBannerBadgeEmoji(data.banner.badgeEmoji)
+      if (data.banners && Array.isArray(data.banners)) {
+        setBannersList(data.banners)
+      }
+      if (data.promoBanners && Array.isArray(data.promoBanners)) {
+        setPromoBannersList(data.promoBanners)
+      }
+      if (data.intervalMs) {
+        setBannerIntervalSec(Math.round(data.intervalMs / 1000) || 2)
       }
     } catch {
       // ignore
@@ -214,6 +261,16 @@ export default function ProductsDashboardPage() {
   useEffect(() => {
     fetchProducts()
     loadBannerConfig()
+
+    const handlePromoUpdate = (e: any) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setPromoBannersList(e.detail)
+      } else {
+        loadBannerConfig()
+      }
+    }
+    window.addEventListener('wacrm:promobanners-updated', handlePromoUpdate)
+    return () => window.removeEventListener('wacrm:promobanners-updated', handlePromoUpdate)
   }, [fetchProducts, loadBannerConfig])
 
   const handleSaveBanner = async (e: React.FormEvent) => {
@@ -224,23 +281,19 @@ export default function ProductsDashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tagline: bannerTagline,
-          title: bannerTitle,
-          highlightedWord: bannerHighlighted,
-          description: bannerDescription,
-          imageUrl: bannerImageUrl,
-          badgeCategory: bannerBadgeCat,
-          badgeTitle: bannerBadgeTitle,
-          badgeEmoji: bannerBadgeEmoji,
+          banners: bannersList,
+          intervalMs: Math.max(1, bannerIntervalSec) * 1000,
         }),
       })
       const data = await res.json()
-      if (data.success) {
-        toast.success('Storefront banner updated successfully!')
+      if (res.ok && data.success) {
+        toast.success('Storefront multiple banners updated successfully!')
         setBannerDialogOpen(false)
+      } else {
+        throw new Error(data.error || 'Failed to update banners')
       }
-    } catch {
-      toast.error('Failed to update banner')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update banners')
     } finally {
       setSavingBanner(false)
     }
@@ -249,6 +302,7 @@ export default function ProductsDashboardPage() {
   // Open Create Dialog
   const handleOpenCreate = () => {
     setEditingProduct(null)
+    setProductTab('general')
     setFormTitle('')
     setFormSlug('')
     setFormCategory('cattle-feed')
@@ -259,14 +313,28 @@ export default function ProductsDashboardPage() {
     setFormBadge('Best Seller')
     setFormBadgeColor('bg-amber-500 text-white')
     setFormImageUrl('https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=600&q=80')
+    setFormGalleryImages([])
+    setFormBrochureUrl('')
     setFormDescription('')
     setFormIsActive(true)
+    // SEO fields reset
+    setFormMetaTitle('')
+    setFormMetaDescription('')
+    setFormCanonicalUrl('')
+    setFormKeywords([])
+    setFormOgTitle('')
+    setFormOgDescription('')
+    setFormOgImageUrl('')
+    setFormTwitterCard('summary_large_image')
+    setFormNoIndex(false)
+    setFormNoFollow(false)
     setDialogOpen(true)
   }
 
   // Open Edit Dialog
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product)
+    setProductTab('general')
     setFormTitle(product.title)
     setFormSlug(product.slug)
     setFormCategory(product.category || 'cattle-feed')
@@ -277,8 +345,21 @@ export default function ProductsDashboardPage() {
     setFormBadge(product.badge || '')
     setFormBadgeColor(product.badge_color || 'bg-amber-500 text-white')
     setFormImageUrl(product.images?.[0] || '')
+    setFormGalleryImages(product.images && product.images.length > 1 ? product.images.slice(1) : [])
+    setFormBrochureUrl(product.brochure_url || '')
     setFormDescription(product.description || '')
     setFormIsActive(product.is_active)
+    // SEO fields hydrate
+    setFormMetaTitle(product.meta_title || '')
+    setFormMetaDescription(product.meta_description || '')
+    setFormCanonicalUrl(product.canonical_url || '')
+    setFormKeywords(Array.isArray(product.keywords) ? product.keywords : [])
+    setFormOgTitle(product.og_title || '')
+    setFormOgDescription(product.og_description || '')
+    setFormOgImageUrl(product.og_image_url || '')
+    setFormTwitterCard(product.twitter_card || 'summary_large_image')
+    setFormNoIndex(Boolean(product.no_index))
+    setFormNoFollow(Boolean(product.no_follow))
     setDialogOpen(true)
   }
 
@@ -313,6 +394,11 @@ export default function ProductsDashboardPage() {
 
     setSaving(true)
     try {
+      const allImages = [
+        formImageUrl.trim(),
+        ...formGalleryImages.map((u) => u.trim()).filter(Boolean),
+      ].filter(Boolean)
+
       const payload = {
         title: formTitle.trim(),
         slug: formSlug.trim() || formTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -323,9 +409,21 @@ export default function ProductsDashboardPage() {
         stock: stockNum,
         badge: formBadge.trim() || undefined,
         badge_color: formBadgeColor,
-        images: formImageUrl.trim() ? [formImageUrl.trim()] : [],
+        images: allImages.length > 0 ? allImages : [],
+        brochure_url: formBrochureUrl.trim() || undefined,
         description: formDescription.trim(),
         is_active: formIsActive,
+        // SEO & Meta Settings
+        meta_title: formMetaTitle.trim() || undefined,
+        meta_description: formMetaDescription.trim() || undefined,
+        canonical_url: formCanonicalUrl.trim() || undefined,
+        keywords: formKeywords,
+        og_title: formOgTitle.trim() || undefined,
+        og_description: formOgDescription.trim() || undefined,
+        og_image_url: formOgImageUrl.trim() || undefined,
+        twitter_card: formTwitterCard,
+        no_index: formNoIndex,
+        no_follow: formNoFollow,
       }
 
       if (editingProduct) {
@@ -468,7 +566,7 @@ export default function ProductsDashboardPage() {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <Link
-            href="/store"
+            href="/"
             target="_blank"
             className={buttonVariants({
               variant: 'outline',
@@ -484,11 +582,21 @@ export default function ProductsDashboardPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setPromoBannersDialogOpen(true)}
+            className="gap-1.5 text-xs text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 font-semibold shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Edit 3 Promo Banners</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setBannerDialogOpen(true)}
             className="gap-1.5 text-xs text-foreground hover:text-emerald-600"
           >
             <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Customize Banner</span>
+            <span>Hero Slider ({bannersList.length})</span>
           </Button>
 
           <Button
@@ -500,6 +608,16 @@ export default function ProductsDashboardPage() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setBulkImportOpen(true)}
+            className="gap-1.5 text-xs text-foreground hover:text-emerald-600 border-border shadow-2xs font-semibold cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Bulk Import</span>
           </Button>
 
           <Button
@@ -549,6 +667,76 @@ export default function ProductsDashboardPage() {
           </div>
           <div className="text-2xl font-bold text-foreground">{categoriesCount}</div>
           <div className="text-[11px] text-muted-foreground">Feed, Seeds, Tools & Kitchen</div>
+        </div>
+      </div>
+
+      {/* Featured 3 Promotional Banners Management Strip */}
+      <div className="rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-emerald-500/5 to-teal-500/5 p-4 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
+                <span>Storefront Featured Promotional Banners</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                  {promoBannersList.filter((b) => b.active !== false).length} Active
+                </span>
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                These three promo cards are featured prominently on the storefront directly under catalog products.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            size="sm"
+            onClick={() => setPromoBannersDialogOpen(true)}
+            className="text-xs bg-amber-600 hover:bg-amber-700 text-white font-semibold gap-1.5 shadow-xs self-start sm:self-auto cursor-pointer"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Manage 3 Banners</span>
+          </Button>
+        </div>
+
+        {/* 3 Cards Mini Preview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          {promoBannersList.map((card, idx) => {
+            const theme = PROMO_THEME_STYLES[card.theme] || PROMO_THEME_STYLES.green
+            return (
+              <div
+                key={card.id || idx}
+                onClick={() => setPromoBannersDialogOpen(true)}
+                className={`p-3 rounded-lg border transition hover:shadow-sm cursor-pointer flex items-center justify-between gap-2 ${theme.container} ${
+                  card.active === false ? 'opacity-50 grayscale-50' : ''
+                }`}
+              >
+                <div className="space-y-1 max-w-[70%]">
+                  <span
+                    className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-full inline-block ${theme.badge}`}
+                  >
+                    {card.badge}
+                  </span>
+                  <div className={`font-extrabold text-xs leading-tight line-clamp-1 ${theme.title}`}>
+                    {card.title}
+                  </div>
+                  <div className={`text-[10px] font-bold line-clamp-1 ${theme.subtitle}`}>
+                    {card.subtitle}
+                  </div>
+                </div>
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl ${theme.iconBg}`}
+                >
+                  {card.iconType === 'image' && card.icon ? (
+                    <img src={card.icon} alt="" className="w-full h-full object-contain p-1 rounded-full" />
+                  ) : (
+                    <span>{card.icon}</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -897,7 +1085,7 @@ export default function ProductsDashboardPage() {
 
       {/* CREATE / EDIT PRODUCT DIALOG */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Package className="w-5 h-5 text-emerald-600" />
@@ -910,9 +1098,42 @@ export default function ProductsDashboardPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveProduct} className="space-y-4 pt-2">
-            {/* Title & Slug */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* TABS SELECTOR */}
+          <div className="flex border-b border-border -mt-1">
+            <button
+              type="button"
+              onClick={() => setProductTab('general')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 cursor-pointer transition-colors ${
+                productTab === 'general'
+                  ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>General Information</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setProductTab('seo')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 cursor-pointer transition-colors ${
+                productTab === 'seo'
+                  ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Globe className="w-4 h-4" />
+              <span>SEO & Meta Settings</span>
+              {(formMetaTitle || formMetaDescription || formKeywords.length > 0 || formNoIndex || formNoFollow) && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveProduct} className="space-y-4 pt-1">
+            {productTab === 'general' ? (
+              <div className="space-y-4">
+                {/* Title & Slug */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
                   Product Title <span className="text-rose-500">*</span>
@@ -1051,22 +1272,31 @@ export default function ProductsDashboardPage() {
               </div>
             </div>
 
-            {/* Image URL & Presets */}
-            <div className="space-y-2 p-3 rounded-xl border border-border/70 bg-muted/20">
-              <div className="flex items-center justify-between">
+            {/* Main Product Image & Presets */}
+            <div className="space-y-2.5 p-3.5 rounded-xl border border-border/70 bg-muted/20">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Product Image URL</span>
+                  <span>Main Product Thumbnail</span>
                 </label>
-                <span className="text-[10px] text-muted-foreground">Unsplash or direct image URL</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProductMainImagePickerOpen(true)}
+                  className="h-7 text-xs gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 self-start sm:self-auto font-semibold cursor-pointer"
+                >
+                  <Folder className="w-3 h-3" />
+                  <span>Select from Media Library</span>
+                </Button>
               </div>
 
               <div className="flex gap-2">
                 <Input
                   value={formImageUrl}
                   onChange={(e) => setFormImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="h-9 text-xs flex-1"
+                  placeholder="https://... or choose from media library"
+                  className="h-9 text-xs flex-1 bg-background"
                 />
               </div>
 
@@ -1081,7 +1311,7 @@ export default function ProductsDashboardPage() {
                       key={preset.label}
                       type="button"
                       onClick={() => setFormImageUrl(preset.url)}
-                      className={`text-[10px] px-2 py-0.5 rounded-md border transition ${
+                      className={`text-[10px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
                         formImageUrl === preset.url
                           ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
                           : 'bg-card hover:bg-muted text-muted-foreground border-border'
@@ -1107,10 +1337,119 @@ export default function ProductsDashboardPage() {
                     />
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground block">Image Preview</span>
-                    <span className="text-[10px]">Looks great on storefront product cards!</span>
+                    <span className="font-semibold text-foreground block">Main Thumbnail Selected</span>
+                    <span className="text-[10px]">Displayed on store catalog cards & checkout</span>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Additional Gallery Images */}
+            <div className="space-y-2 p-3.5 rounded-xl border border-border/70 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-primary" />
+                  <span>Product Gallery Images ({formGalleryImages.length})</span>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProductGalleryPickerOpen(true)}
+                  className="h-7 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10 font-semibold cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add from Media Library</span>
+                </Button>
+              </div>
+
+              {formGalleryImages.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  No additional gallery images added yet. Click &quot;Add from Media Library&quot; to pick multiple photos.
+                </p>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-1">
+                  {formGalleryImages.map((imgUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-background"
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Gallery ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormGalleryImages((prev) => prev.filter((_, i) => i !== idx))
+                        }
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                        title="Remove image"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Product Brochure PDF Attachment */}
+            <div className="space-y-2 p-3.5 rounded-xl border border-border/70 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Product Brochure & Specs (PDF)</span>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProductBrochurePickerOpen(true)}
+                  className="h-7 text-xs gap-1.5 border-rose-500/40 text-rose-600 hover:bg-rose-500/10 font-semibold cursor-pointer"
+                >
+                  <Folder className="w-3 h-3" />
+                  <span>Select Brochure PDF</span>
+                </Button>
+              </div>
+
+              {formBrochureUrl ? (
+                <div className="flex items-center justify-between p-2.5 bg-background rounded-lg border border-border text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="p-1.5 rounded bg-rose-500/10 text-rose-600">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-semibold text-foreground block truncate">
+                        {formBrochureUrl.split('/').pop() || 'Product_Brochure.pdf'}
+                      </span>
+                      <a
+                        href={formBrochureUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-emerald-600 hover:underline flex items-center gap-0.5"
+                      >
+                        <ExternalLink className="w-2.5 h-2.5" />
+                        Preview attached PDF
+                      </a>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFormBrochureUrl('')}
+                    className="h-7 w-7 text-muted-foreground hover:text-rose-600"
+                    title="Remove brochure"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Optional product specification sheet, nutritional formulation guide, or user manual PDF.
+                </p>
               )}
             </div>
 
@@ -1138,6 +1477,40 @@ export default function ProductsDashboardPage() {
               </div>
               <Switch checked={formIsActive} onCheckedChange={setFormIsActive} />
             </div>
+          </div>
+        ) : (
+          <ProductSeoForm
+            productTitle={formTitle}
+            productDescription={formDescription}
+            productPrice={formPrice || 0}
+            productFeaturedImage={formImageUrl}
+            allProducts={products}
+            currentProductId={editingProduct?.id}
+            metaTitle={formMetaTitle}
+            setMetaTitle={setFormMetaTitle}
+            metaDescription={formMetaDescription}
+            setMetaDescription={setFormMetaDescription}
+            canonicalUrl={formCanonicalUrl}
+            setCanonicalUrl={setFormCanonicalUrl}
+            keywords={formKeywords}
+            setKeywords={setFormKeywords}
+            slug={formSlug}
+            setSlug={setFormSlug}
+            ogTitle={formOgTitle}
+            setOgTitle={setFormOgTitle}
+            ogDescription={formOgDescription}
+            setOgDescription={setFormOgDescription}
+            ogImageUrl={formOgImageUrl}
+            setOgImageUrl={setFormOgImageUrl}
+            twitterCard={formTwitterCard}
+            setTwitterCard={setFormTwitterCard}
+            noIndex={formNoIndex}
+            setNoIndex={setFormNoIndex}
+            noFollow={formNoFollow}
+            setNoFollow={setFormNoFollow}
+            onOpenMediaPicker={() => setProductOgPickerOpen(true)}
+          />
+        )}
 
             <DialogFooter className="pt-2">
               <Button
@@ -1205,215 +1578,551 @@ export default function ProductsDashboardPage() {
       </Dialog>
       {/* CUSTOMIZE BANNER DIALOG */}
       <Dialog open={bannerDialogOpen} onOpenChange={setBannerDialogOpen}>
-        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <Edit3 className="w-5 h-5 text-emerald-600" />
-              <span>Customize Storefront Hero Banner</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Change the headline title, highlighted green text, description, and visual image shown to customers at /store.
-            </DialogDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <Edit3 className="w-5 h-5 text-emerald-600" />
+                  <span>Customize Storefront Banners</span>
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Manage the multiple banners that automatically rotate on the storefront every {bannerIntervalSec} seconds.
+                </DialogDescription>
+              </div>
+
+              {/* Banner Type Tabs */}
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg self-start sm:self-auto">
+                <button
+                  type="button"
+                  className="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-600 text-white shadow-2xs cursor-default"
+                >
+                  🖼️ Hero Slider
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBannerDialogOpen(false)
+                    setPromoBannersDialogOpen(true)
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-md text-foreground hover:bg-background/80 transition cursor-pointer"
+                >
+                  🎯 3 Promo Cards
+                </button>
+              </div>
+            </div>
           </DialogHeader>
 
-          <form onSubmit={handleSaveBanner} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Small Tagline</label>
-              <Input
-                value={bannerTagline}
-                onChange={(e) => setBannerTagline(e.target.value)}
-                placeholder="e.g. FRESH • RELIABLE • QUALITY"
-                className="h-9 text-xs"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Headline Title <span className="text-rose-500">*</span>
-                </label>
-                <Input
-                  value={bannerTitle}
-                  onChange={(e) => setBannerTitle(e.target.value)}
-                  placeholder="e.g. Farm & Rural Essentials Delivered to"
-                  required
-                  className="h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Highlighted Green Word(s) <span className="text-rose-500">*</span>
-                </label>
-                <Input
-                  value={bannerHighlighted}
-                  onChange={(e) => setBannerHighlighted(e.target.value)}
-                  placeholder="e.g. Your Doorstep"
-                  required
-                  className="h-9 text-xs font-bold text-emerald-600"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Banner Description</label>
-              <Textarea
-                rows={3}
-                value={bannerDescription}
-                onChange={(e) => setBannerDescription(e.target.value)}
-                placeholder="Shop lab-verified cattle feed, high-yield hybrid seeds..."
-                className="text-xs"
-              />
-            </div>
-
-            <div className="space-y-2 p-3.5 bg-muted/30 rounded-xl border border-border">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Banner Image URL</span>
-                </label>
-                <span className="text-[10px] text-muted-foreground">High-resolution photo</span>
-              </div>
-
-              <Input
-                value={bannerImageUrl}
-                onChange={(e) => setBannerImageUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
-                className="h-9 text-xs"
-              />
-
-              <div className="pt-1.5 space-y-1">
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  Quick Image Presets (Click to choose):
+          <div className="space-y-6 pt-2">
+            {/* Rotation Speed Setting */}
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Rotation Interval (Seconds)</span>
                 </span>
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                <p className="text-[11px] text-muted-foreground">
+                  Storefront changes banners continuously. Standard setting is 2 seconds.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {[2, 3, 4, 5].map((sec) => (
                   <button
+                    key={sec}
                     type="button"
-                    onClick={() => {
-                      setBannerImageUrl('https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80')
-                      setBannerBadgeEmoji('🚜')
-                      setBannerBadgeCat('High Efficiency')
-                      setBannerBadgeTitle('Peak Farm Yield')
-                    }}
-                    className={`text-[10px] px-2.5 py-1 rounded-md border transition cursor-pointer ${
-                      bannerImageUrl.includes('photo-1592982537447')
-                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                        : 'bg-card hover:bg-muted text-muted-foreground border-border'
+                    onClick={() => setBannerIntervalSec(sec)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                      bannerIntervalSec === sec
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : 'bg-card text-foreground hover:bg-muted border-border'
                     }`}
                   >
-                    🚜 Modern Tractor & Sprayers
+                    {sec}s {sec === 2 ? '(Default)' : ''}
                   </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Slide Editor / Form */}
+            {(isAddingNewSlide || editingSlideId) && (
+              <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{isAddingNewSlide ? 'Add New Banner' : 'Edit Banner'}</span>
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
-                      setBannerImageUrl('https://images.unsplash.com/photo-1527153857715-3908f2ae5e81?auto=format&fit=crop&w=800&q=80')
-                      setBannerBadgeEmoji('🐄')
-                      setBannerBadgeCat('Pure Nutrition')
-                      setBannerBadgeTitle('Peak Milk Yield')
+                      setIsAddingNewSlide(false)
+                      setEditingSlideId(null)
                     }}
-                    className={`text-[10px] px-2.5 py-1 rounded-md border transition cursor-pointer ${
-                      bannerImageUrl.includes('photo-1527153857715')
-                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                        : 'bg-card hover:bg-muted text-muted-foreground border-border'
-                    }`}
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium cursor-pointer"
                   >
-                    🐄 Healthy Dairy Cattle
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBannerImageUrl('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80')
-                      setBannerBadgeEmoji('🌾')
-                      setBannerBadgeCat('High Yield')
-                      setBannerBadgeTitle('100% Certified Seeds')
-                    }}
-                    className={`text-[10px] px-2.5 py-1 rounded-md border transition cursor-pointer ${
-                      bannerImageUrl.includes('photo-1500937386664')
-                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                        : 'bg-card hover:bg-muted text-muted-foreground border-border'
-                    }`}
-                  >
-                    🌾 Golden Wheat Harvest
+                    Cancel
                   </button>
                 </div>
-              </div>
 
-              {bannerImageUrl && (
-                <div className="mt-2 flex items-center gap-3 p-2 bg-card rounded-lg border border-border">
-                  <div className="w-20 h-14 rounded-md overflow-hidden bg-muted border border-border flex-shrink-0">
-                    <img
-                      src={bannerImageUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-foreground">Title</label>
+                    <Input
+                      value={slideFormTitle}
+                      onChange={(e) => setSlideFormTitle(e.target.value)}
+                      placeholder="e.g. Lab-Verified Cattle Feed"
+                      className="h-8 text-xs bg-card"
                     />
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-bold text-foreground block">Image Preview</span>
-                    <span className="text-[10px]">
-                      Displays in 4:3 rounded aspect with floating badge overlay
-                    </span>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-foreground">Category Filter</label>
+                    <select
+                      value={slideFormCategory}
+                      onChange={(e) => setSlideFormCategory(e.target.value)}
+                      className="w-full h-8 text-xs bg-card border border-border rounded-md px-2 text-foreground outline-none"
+                    >
+                      <option value="all">All Products</option>
+                      <option value="cattle-feed">Cattle Feed</option>
+                      <option value="seeds-fert">Seeds & Agri</option>
+                      <option value="agri-tools">Tools & Sprayers</option>
+                      <option value="home-kitchen">Home & Kitchen</option>
+                    </select>
                   </div>
                 </div>
-              )}
-            </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">Badge Emoji</label>
-                <Input
-                  value={bannerBadgeEmoji}
-                  onChange={(e) => setBannerBadgeEmoji(e.target.value)}
-                  placeholder="🚜, 🌾, 🐄"
-                  className="h-8 text-xs text-center"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">Top Label</label>
-                <Input
-                  value={bannerBadgeCat}
-                  onChange={(e) => setBannerBadgeCat(e.target.value)}
-                  placeholder="e.g. High Efficiency"
-                  className="h-8 text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">Bottom Value</label>
-                <Input
-                  value={bannerBadgeTitle}
-                  onChange={(e) => setBannerBadgeTitle(e.target.value)}
-                  placeholder="e.g. Peak Farm Yield"
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-foreground">Subtitle</label>
+                  <Input
+                    value={slideFormSubtitle}
+                    onChange={(e) => setSlideFormSubtitle(e.target.value)}
+                    placeholder="e.g. Boost milk yield by up to 25% with certified formulation"
+                    className="h-8 text-xs bg-card"
+                  />
+                </div>
 
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setBannerDialogOpen(false)}
-                className="text-xs"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={savingBanner}
-                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-              >
-                {savingBanner ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                ) : (
-                  <Check className="w-3.5 h-3.5 mr-1" />
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-foreground">Emoji</label>
+                    <Input
+                      value={slideFormBadgeEmoji}
+                      onChange={(e) => setSlideFormBadgeEmoji(e.target.value)}
+                      placeholder="🐄"
+                      className="h-8 text-xs bg-card text-center"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-foreground">Badge Label</label>
+                    <Input
+                      value={slideFormBadgeText}
+                      onChange={(e) => setSlideFormBadgeText(e.target.value)}
+                      placeholder="Dairy Special"
+                      className="h-8 text-xs bg-card"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-foreground">CTA Button</label>
+                    <Input
+                      value={slideFormCtaText}
+                      onChange={(e) => setSlideFormCtaText(e.target.value)}
+                      placeholder="Shop Now"
+                      className="h-8 text-xs bg-card"
+                    />
+                  </div>
+                </div>
+
+                {/* Image URL + Presets */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Banner Media (Image or Background Video)</span>
+                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBannerMediaPickerOpen(true)}
+                      className="h-6 text-[10px] px-2 gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 font-semibold cursor-pointer"
+                    >
+                      <Folder className="w-3 h-3" />
+                      <span>Select from Media Library</span>
+                    </Button>
+                  </div>
+                  <Input
+                    value={slideFormImageUrl}
+                    onChange={(e) => setSlideFormImageUrl(e.target.value)}
+                    placeholder="https://... or choose from media library"
+                    className="h-8 text-xs bg-card"
+                  />
+
+                  {/* Presets */}
+                  <div className="pt-1">
+                    <span className="text-[10px] font-medium text-muted-foreground block mb-1">
+                      Quick Photo Presets:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BANNER_PHOTO_PRESETS.map((p) => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => {
+                            setSlideFormImageUrl(p.url)
+                            setSlideFormBadgeEmoji(p.emoji)
+                            setSlideFormBadgeText(p.badgeText)
+                            setSlideFormCategory(p.category)
+                          }}
+                          className={`text-[10px] px-2.5 py-1 rounded-md border transition cursor-pointer ${
+                            slideFormImageUrl === p.url
+                              ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
+                              : 'bg-card hover:bg-muted text-foreground border-border'
+                          }`}
+                        >
+                          <span>{p.emoji} {p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsAddingNewSlide(false)
+                      setEditingSlideId(null)
+                    }}
+                    className="text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (!slideFormTitle.trim() || !slideFormImageUrl.trim()) {
+                        toast.error('Title and Image URL required')
+                        return
+                      }
+                      if (isAddingNewSlide) {
+                        const newSlide: StoreBannerSlide = {
+                          id: `banner-${Date.now()}`,
+                          title: slideFormTitle.trim(),
+                          subtitle: slideFormSubtitle.trim(),
+                          badgeText: slideFormBadgeText.trim(),
+                          badgeEmoji: slideFormBadgeEmoji.trim() || '🌾',
+                          imageUrl: slideFormImageUrl.trim(),
+                          categoryFilter: slideFormCategory,
+                          ctaText: slideFormCtaText.trim() || 'Shop Now',
+                          active: true,
+                        }
+                        setBannersList((prev) => [...prev, newSlide])
+                        setIsAddingNewSlide(false)
+                        toast.success('Slide added to list')
+                      } else if (editingSlideId) {
+                        setBannersList((prev) =>
+                          prev.map((b) =>
+                            b.id === editingSlideId
+                              ? {
+                                  ...b,
+                                  title: slideFormTitle.trim(),
+                                  subtitle: slideFormSubtitle.trim(),
+                                  badgeText: slideFormBadgeText.trim(),
+                                  badgeEmoji: slideFormBadgeEmoji.trim() || '🌾',
+                                  imageUrl: slideFormImageUrl.trim(),
+                                  categoryFilter: slideFormCategory,
+                                  ctaText: slideFormCtaText.trim() || 'Shop Now',
+                                }
+                              : b
+                          )
+                        )
+                        setEditingSlideId(null)
+                        toast.success('Slide updated')
+                      }
+                    }}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                    <span>{isAddingNewSlide ? 'Add to Banners' : 'Update Slide'}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Configured Banners List */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Configured Banners ({bannersList.length})</span>
+                </span>
+                {!isAddingNewSlide && !editingSlideId && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setIsAddingNewSlide(true)
+                      setEditingSlideId(null)
+                      setSlideFormTitle('Seasonal Farm Essential Offer')
+                      setSlideFormSubtitle('Special discount on rural and agricultural supplies')
+                      setSlideFormBadgeText('Kisan Deal')
+                      setSlideFormBadgeEmoji('🌾')
+                      setSlideFormImageUrl(BANNER_PHOTO_PRESETS[0].url)
+                      setSlideFormCategory('cattle-feed')
+                      setSlideFormCtaText('Shop Now')
+                    }}
+                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <span>Add Banner Slide</span>
+                  </Button>
                 )}
-                <span>Save Banner Changes</span>
-              </Button>
-            </DialogFooter>
-          </form>
+              </div>
+
+              <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-card">
+                {bannersList.map((slide, idx) => (
+                  <div
+                    key={slide.id || idx}
+                    className={`p-3 flex items-center justify-between gap-3 transition ${
+                      slide.active === false ? 'opacity-60 bg-muted/40' : 'hover:bg-muted/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-16 h-11 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border">
+                        <img
+                          src={slide.imageUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-foreground truncate">
+                            {slide.badgeEmoji} {slide.title}
+                          </span>
+                          {slide.badgeText && (
+                            <span className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              {slide.badgeText}
+                            </span>
+                          )}
+                          {slide.active === false && (
+                            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                              Hidden
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate">{slide.subtitle}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBannersList((prev) =>
+                            prev.map((b) =>
+                              b.id === slide.id ? { ...b, active: b.active === false ? true : false } : b
+                            )
+                          )
+                        }}
+                        className="p-1.5 rounded hover:bg-muted text-muted-foreground transition"
+                        title={slide.active === false ? 'Enable' : 'Hide'}
+                      >
+                        {slide.active === false ? (
+                          <EyeOff className="w-3.5 h-3.5" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => {
+                          const updated = [...bannersList]
+                          const temp = updated[idx]
+                          updated[idx] = updated[idx - 1]
+                          updated[idx - 1] = temp
+                          setBannersList(updated)
+                        }}
+                        className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:opacity-30"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={idx === bannersList.length - 1}
+                        onClick={() => {
+                          const updated = [...bannersList]
+                          const temp = updated[idx]
+                          updated[idx] = updated[idx + 1]
+                          updated[idx + 1] = temp
+                          setBannersList(updated)
+                        }}
+                        className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:opacity-30"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingSlideId(slide.id)
+                          setIsAddingNewSlide(false)
+                          setSlideFormTitle(slide.title || '')
+                          setSlideFormSubtitle(slide.subtitle || '')
+                          setSlideFormBadgeText(slide.badgeText || '')
+                          setSlideFormBadgeEmoji(slide.badgeEmoji || '🌾')
+                          setSlideFormImageUrl(slide.imageUrl || '')
+                          setSlideFormCategory(slide.categoryFilter || 'all')
+                          setSlideFormCtaText(slide.ctaText || 'Shop Now')
+                        }}
+                        className="px-2 py-1 rounded text-xs font-semibold hover:bg-muted text-foreground"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (bannersList.length <= 1) {
+                            toast.error('Must keep at least 1 banner')
+                            return
+                          }
+                          setBannersList((prev) => prev.filter((b) => b.id !== slide.id))
+                        }}
+                        className="p-1.5 rounded hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setBannerDialogOpen(false)}
+              className="text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={savingBanner}
+              onClick={handleSaveBanner}
+              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+            >
+              {savingBanner ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+              ) : (
+                <Check className="w-3.5 h-3.5 mr-1" />
+              )}
+              <span>Save Banner Changes</span>
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 3 PROMOTIONAL BANNERS MANAGEMENT DIALOG */}
+      <PromoBannersDialog
+        open={promoBannersDialogOpen}
+        onOpenChange={setPromoBannersDialogOpen}
+        onSaved={(updated) => setPromoBannersList(updated)}
+      />
+
+      {/* BULK IMPORT MODAL (CSV & GOOGLE SHEETS) */}
+      <BulkImportModal
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        onImportComplete={fetchProducts}
+      />
+
+      {/* MEDIA PICKER: MAIN PRODUCT THUMBNAIL */}
+      <MediaPickerModal
+        open={productMainImagePickerOpen}
+        onOpenChange={setProductMainImagePickerOpen}
+        allowedTypes={['image']}
+        defaultCategory="products"
+        title="Select Product Thumbnail Image"
+        description="Pick a product image from the Media Library or upload a new one directly."
+        currentValue={formImageUrl}
+        onSelect={(_item, url) => {
+          const finalUrl = Array.isArray(url) ? url[0] : url
+          if (finalUrl) setFormImageUrl(finalUrl)
+        }}
+      />
+
+      {/* MEDIA PICKER: PRODUCT GALLERY IMAGES (MULTI-SELECT) */}
+      <MediaPickerModal
+        open={productGalleryPickerOpen}
+        onOpenChange={setProductGalleryPickerOpen}
+        allowedTypes={['image']}
+        defaultCategory="products"
+        multiple={true}
+        title="Add Gallery Photos from Media Library"
+        description="Select multiple images to appear in the product gallery carousel."
+        onSelect={(_items, urls) => {
+          const newUrls = Array.isArray(urls) ? urls : [urls]
+          setFormGalleryImages((prev) => Array.from(new Set([...prev, ...newUrls])))
+        }}
+      />
+
+      {/* MEDIA PICKER: PRODUCT BROCHURE PDF */}
+      <MediaPickerModal
+        open={productBrochurePickerOpen}
+        onOpenChange={setProductBrochurePickerOpen}
+        allowedTypes={['pdf', 'document']}
+        defaultCategory="brochures"
+        title="Select Product Brochure PDF"
+        description="Select a product brochure, user manual, or technical formulation PDF."
+        currentValue={formBrochureUrl}
+        onSelect={(_item, url) => {
+          const finalUrl = Array.isArray(url) ? url[0] : url
+          if (finalUrl) setFormBrochureUrl(finalUrl)
+        }}
+      />
+
+      {/* MEDIA PICKER: HERO SLIDER BANNER MEDIA */}
+      <MediaPickerModal
+        open={bannerMediaPickerOpen}
+        onOpenChange={setBannerMediaPickerOpen}
+        allowedTypes={['image', 'video']}
+        defaultCategory="banners"
+        title="Select Banner Media from Library"
+        description="Choose a desktop/mobile banner image or background video loop from existing media assets."
+        currentValue={slideFormImageUrl}
+        onSelect={(_item, url) => {
+          const finalUrl = Array.isArray(url) ? url[0] : url
+          if (finalUrl) setSlideFormImageUrl(finalUrl)
+        }}
+      />
+
+      {/* MEDIA PICKER: OPEN GRAPH / SOCIAL IMAGE */}
+      <MediaPickerModal
+        open={productOgPickerOpen}
+        onOpenChange={setProductOgPickerOpen}
+        allowedTypes={['image']}
+        defaultCategory="products"
+        title="Select Social Share / Open Graph Image"
+        description="Choose a high-resolution 1200x630 banner image for WhatsApp and social link unfurling."
+        currentValue={formOgImageUrl}
+        onSelect={(_item, url) => {
+          const finalUrl = Array.isArray(url) ? url[0] : url
+          if (finalUrl) setFormOgImageUrl(finalUrl)
+        }}
+      />
     </div>
   )
 }

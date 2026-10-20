@@ -28,6 +28,8 @@
     "automations": "Automations",
     "orders": "Orders",
     "products": "Products",
+    "mediaLibrary": "Media Library",
+    "deliveryAgents": "Delivery Agents",
     "flows": "Flows",
     "aiAgents": "AI Agents",
     "settings": "Settings",
@@ -1834,7 +1836,7 @@
     },
     "aiConfig": {
       "title": "Agent setup",
-      "description": "Bring your own OpenAI or Anthropic key. wacrm calls the provider directly with your key — no per-seat AI fees, and your data stays yours. This powers AI-drafted replies in the inbox, the auto-reply bot, and the Playground.",
+      "description": "Bring your own Google Gemini, OpenAI, or Anthropic key. wacrm calls the provider directly with your key — no per-seat AI fees, and your data stays yours. This powers AI-drafted replies in the inbox, the auto-reply bot, and the Playground.",
       "adminOnlyConfig": "Only admins and owners can change the AI configuration.",
       "loadFailed": "Failed to load AI configuration",
       "providerAndKey": "Provider & key",
@@ -1899,7 +1901,17 @@
       "reindexTooltip": "Re-embed all documents (e.g. after adding an embeddings key)",
       "editDoc": "Edit",
       "deleteDoc": "Delete",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "uploadFiles": "Upload files",
+      "uploadFilesDesc": "Upload documents to feed the AI agent's knowledge base directly.",
+      "dropFilesHere": "Drag & drop files here, or click to browse",
+      "supportedFormats": "Supported: TXT, Markdown (.md), CSV, JSON, HTML, PDF (up to 15MB each)",
+      "uploading": "Uploading & indexing…",
+      "uploadAndIngest": "Upload & Index ({count})",
+      "uploadSuccess": "Uploaded and indexed {count} document(s).",
+      "uploadFailed": "Failed to upload document(s).",
+      "clearSelection": "Clear",
+      "selectFiles": "Select files"
     }
   },
   "SignupPage": {
