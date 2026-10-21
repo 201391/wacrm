@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Sprout,
   Search,
-  Heart,
   ShoppingCart,
   LayoutGrid,
   ChevronDown,
@@ -35,7 +34,6 @@ export function StoreHeader() {
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
   const [helplineOpen, setHelplineOpen] = useState(false)
-  const [wishlistCount] = useState(2)
 
   const whatsappSupportUrl = `https://wa.me/918815356175?text=${encodeURIComponent(
     language === 'hi'
@@ -139,25 +137,6 @@ export function StoreHeader() {
               <LayoutDashboard className="w-3.5 h-3.5 text-[#0b7b3e]" />
               <span>{t('crmAdmin', 'CRM Admin')}</span>
             </Link>
-
-            <button
-              onClick={() =>
-                toast.info(
-                  language === 'hi'
-                    ? `आपकी विशलिस्ट में ${wishlistCount} कृषि उत्पाद सुरक्षित हैं`
-                    : `You have ${wishlistCount} saved agricultural items in your Wishlist`
-                )
-              }
-              className="flex flex-col items-center gap-0.5 hover:text-[#0b7b3e] transition relative cursor-pointer"
-            >
-              <div className="relative">
-                <Heart className="w-4 h-4 text-slate-700" />
-                <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                  {wishlistCount}
-                </span>
-              </div>
-              <span className="text-[11px] font-medium hidden sm:inline">{t('wishlist', 'Wishlist')}</span>
-            </button>
 
             {/* WhatsApp Customer Support Button */}
             <a
