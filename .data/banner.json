@@ -1,0 +1,88 @@
+{
+  "intervalMs": 8000,
+  "banners": [
+    {
+      "id": "banner-1792579323182",
+      "title": "New Farm Essential Offer",
+      "subtitle": "Special seasonal discount on verified agricultural supplies.",
+      "badgeText": "Special Deal",
+      "badgeEmoji": "✨",
+      "imageUrl": "/uploads/banners/1792579317791-Gemini_Generated_Image_1n5y2x1n5y2x1n5y.png",
+      "mediaType": "image",
+      "categoryFilter": "cattle-feed",
+      "ctaText": "Shop Now",
+      "active": true
+    },
+    {
+      "id": "banner-1792579356504",
+      "title": "New Farm Essential Offer",
+      "subtitle": "Special seasonal discount on verified agricultural supplies.",
+      "badgeText": "Special Deal",
+      "badgeEmoji": "✨",
+      "imageUrl": "/uploads/banners/1792579351996-gemini_generated_video_a9e5e3d0.mp4",
+      "videoUrl": "/uploads/banners/1792579351996-gemini_generated_video_a9e5e3d0.mp4",
+      "mediaType": "video",
+      "categoryFilter": "cattle-feed",
+      "ctaText": "Shop Now",
+      "active": true
+    },
+    {
+      "id": "banner-1793016004436",
+      "title": "New Farm Essential Offer",
+      "subtitle": "Special seasonal discount on verified agricultural supplies.",
+      "badgeText": "Special Deal",
+      "badgeEmoji": "✨",
+      "imageUrl": "/uploads/banners/1793015999227-Gemini_Generated_Image_bqso9tbqso9tbqso.png",
+      "mediaType": "image",
+      "categoryFilter": "cattle-feed",
+      "ctaText": "Shop Now",
+      "active": true
+    }
+  ],
+  "promoBanners": [
+    {
+      "id": "promo-1",
+      "badge": "High Protein Plus",
+      "title": "Cattle Feed Premix Max",
+      "subtitle": "Up to 30% Off",
+      "ctaText": "Shop Now",
+      "categoryFilter": "cattle-feed",
+      "iconType": "emoji",
+      "icon": "🐄",
+      "theme": "green",
+      "active": true
+    },
+    {
+      "id": "promo-2",
+      "badge": "Daily Essentials",
+      "title": "Dairy Calcium Boosters",
+      "subtitle": "Better Milk Yield",
+      "ctaText": "Shop Now",
+      "categoryFilter": "cattle-feed",
+      "iconType": "emoji",
+      "icon": "🥛",
+      "theme": "amber",
+      "active": true
+    },
+    {
+      "id": "promo-3",
+      "badge": "Certified Seeds",
+      "title": "High-Yield Hybrid Seeds",
+      "subtitle": "Pure & Natural",
+      "ctaText": "Shop Now",
+      "categoryFilter": "seeds-fert",
+      "iconType": "emoji",
+      "icon": "🌾",
+      "theme": "dark",
+      "active": true
+    }
+  ],
+  "tagline": "FRESH • RELIABLE • QUALITY",
+  "title": "Farm & Rural Essentials Delivered to Your Doorstep",
+  "highlightedWord": "Your Doorstep",
+  "description": "Shop lab-verified cattle feed, high-yield hybrid seeds, bio-fertilizers, knapsack sprayers, and sturdy village kitchen cookware. Delivered straight to your doorstep or panchayat.",
+  "imageUrl": "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80",
+  "badgeCategory": "High Efficiency",
+  "badgeTitle": "Peak Farm Yield",
+  "badgeEmoji": "🚜"
+}
