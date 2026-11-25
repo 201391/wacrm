@@ -4,19 +4,23 @@ import React, { useState, useEffect } from 'react'
 import { Sprout } from 'lucide-react'
 import { useStoreLanguage } from './language-context'
 import { PrivacyPolicyDialog } from './privacy-policy-dialog'
+import { TermsOfServiceDialog } from './terms-of-service-dialog'
 
 export function StoreFooter() {
   const { t, language, setLanguage } = useStoreLanguage()
   const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [termsOpen, setTermsOpen] = useState(false)
 
-  // Listen for hash navigation e.g. #privacy or #privacy-policy
+  // Listen for hash navigation e.g. #privacy, #terms, #terms-of-service
   useEffect(() => {
     const handleHashChange = () => {
-      if (
-        typeof window !== 'undefined' &&
-        (window.location.hash === '#privacy' || window.location.hash === '#privacy-policy')
-      ) {
-        setPrivacyOpen(true)
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash
+        if (hash === '#privacy' || hash === '#privacy-policy') {
+          setPrivacyOpen(true)
+        } else if (hash === '#terms' || hash === '#terms-of-service' || hash === '#terms-and-conditions') {
+          setTermsOpen(true)
+        }
       }
     }
     handleHashChange()
@@ -46,9 +50,8 @@ export function StoreFooter() {
                 type="button"
                 suppressHydrationWarning
                 onClick={() => setLanguage('en')}
-                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${
-                  language === 'en' ? 'bg-white text-[#0b7b3e] shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${language === 'en' ? 'bg-white text-[#0b7b3e] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 English
               </button>
@@ -56,9 +59,8 @@ export function StoreFooter() {
                 type="button"
                 suppressHydrationWarning
                 onClick={() => setLanguage('hi')}
-                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${
-                  language === 'hi' ? 'bg-[#0b7b3e] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${language === 'hi' ? 'bg-[#0b7b3e] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 हिंदी
               </button>
@@ -72,7 +74,12 @@ export function StoreFooter() {
               >
                 {t('footerPrivacy', 'Privacy Policy')}
               </button>
-              <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-[#0b7b3e] transition">
+              <a
+                // type="button"
+                href='/terms-of-service'
+                // onClick={() => setTermsOpen(true)}
+                className="hover:text-[#0b7b3e] transition cursor-pointer font-medium text-slate-500"
+              >
                 {t('footerTerms', 'Terms of Service')}
               </a>
               <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-[#0b7b3e] transition">
@@ -98,6 +105,9 @@ export function StoreFooter() {
 
       {/* Privacy Policy Dialog */}
       <PrivacyPolicyDialog open={privacyOpen} onOpenChange={setPrivacyOpen} />
+
+      {/* Terms of Service Dialog */}
+      <TermsOfServiceDialog open={termsOpen} onOpenChange={setTermsOpen} />
     </>
   )
 }
